@@ -237,6 +237,7 @@
           <button class="secondary" data-anatomy-mode="feet">Feet</button>
           <button class="secondary" data-anatomy-mode="nerves">Leg nerves</button>
         </div>
+        <p id="anatomy-drag-hint" class="hint" hidden>Drag to rotate. Use the arrows when the model has focus.</p>
         <label class="body-picker">Body area
           <select id="body-zone-picker"></select>
         </label>
@@ -249,8 +250,12 @@
   const slider = panel.querySelector('#body-zoom');
   const picker = panel.querySelector('#body-zone-picker');
   const regionButtons = [...panel.querySelectorAll('[data-zone]')];
+  let viewer;
+  let currentView;
 
   function setView(view) {
+    currentView = view;
+    viewer?.view(view);
     const layer = panel.querySelector('[data-body-view="' + view + '"]');
     for (const group of panel.querySelectorAll('[data-body-view]')) {
       group.toggleAttribute('hidden', group !== layer);
@@ -269,7 +274,9 @@
 
   function selectZone(name) {
     const [, title, , description, readings = []] = zones.find(([id]) => id === name);
+    if (![...picker.options].some(option => option.value === name)) picker.add(new Option(title, name));
     picker.value = name;
+    viewer?.select(name);
     panel.querySelector('#body-zone-title').textContent = title;
     panel.querySelector('#body-zone-description').textContent = description;
     regionButtons.forEach(node => node.setAttribute('aria-pressed', String(node.dataset.zone === name)));
@@ -293,6 +300,7 @@
   function setZoom(value) {
     const zoom = Math.max(0, Math.min(100, value));
     slider.value = zoom;
+    viewer?.zoom(zoom);
     panel.querySelector('#body-anatomy').style.transform = 'scale(' + (1 + zoom * .001) + ')';
     panel.querySelector('#body-zoom-out').disabled = zoom === 0;
     panel.querySelector('#body-zoom-in').disabled = zoom === 100;
@@ -322,4 +330,32 @@
   panel.querySelector('#body-zoom-in').addEventListener('click', () => setZoom(Number(slider.value) + 25));
   setView('overview');
   setZoom(0);
+  const host = panel.querySelector('#body-view');
+  const svg = host.querySelector('svg');
+  const loadViewer = async () => {
+    try {
+      const { createAnatomyViewer } = await import('./anatomy-3d.js');
+      viewer = createAnatomyViewer(host, svg, selectZone, text => { preview.textContent = text; }, name => {
+        const label = name.replace(/\.r\.?$/i, ' (right)').replace(/\.l\.?$/i, ' (left)');
+        const id = 'atlas-bone-' + name;
+        if (!zones.some(([key]) => key === id)) zones.push([id, label, '', 'Part of the skeletal system.']);
+        return id;
+      });
+      viewer.view(currentView);
+      viewer.select(picker.value);
+      viewer.zoom(Number(slider.value));
+      svg.hidden = true;
+      svg.setAttribute('hidden', '');
+      panel.querySelector('#anatomy-drag-hint').hidden = false;
+    } catch {
+      host.querySelector('.anatomy-canvas')?.remove();
+      viewer = undefined;
+    }
+  };
+  const observer = new IntersectionObserver(entries => {
+    if (!entries.some(entry => entry.isIntersecting)) return;
+    observer.disconnect();
+    loadViewer();
+  });
+  observer.observe(host);
 })();

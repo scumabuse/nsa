@@ -12,6 +12,14 @@ Mode|Режим
 Training|Обучение
 Personal log|Личный журнал
 Crew health|Здоровье экипажа
+Reading assistant|Помощник по показателям
+Dismiss health alert|Закрыть предупреждение о здоровье
+Explain my readings|Объяснить мои показатели
+Local assessment|Локальная оценка
+Gemini · Training example|Gemini · Учебный пример
+Preparing the training explanation…|Готовим пояснение учебного примера…
+Gemini is unavailable. The local assessment is shown above.|Gemini недоступен. Локальная оценка показана выше.
+Personal readings stay on this device.|Личные измерения остаются на этом устройстве.
 Log readings, review changes and prepare a handoff for the onboard medic.|Записывайте показатели, отслеживайте изменения и готовьте отчёт для бортового медика.
 New reading|Новое измерение
 Review training scenario|Открыть учебный сценарий
@@ -149,6 +157,12 @@ Zoom in|Увеличить
 Zoom out|Уменьшить
 Anatomy zoom|Масштаб карты тела
 Anatomy view|Вид карты тела
+Viewing angle|Ракурс
+Rotate anatomy model|Вращение анатомической модели
+Front|Спереди
+Side|Сбоку
+Back|Сзади
+Drag to rotate. Use the arrows when the model has focus.|Перетащите модель для вращения. Когда модель в фокусе, используйте клавиши со стрелками.
 Interactive anatomical zones|Интерактивные зоны тела
 Interactive body illustration|Интерактивная фигура
 Sections|Разделы

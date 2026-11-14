@@ -14,11 +14,15 @@ Open `http://127.0.0.1:8787/` and wait for the “Available offline” footer be
 
 ## Demonstrate the workflow
 
+For the optional Gemini training explanation, set `GEMINI_API_KEY` in your local environment and run `node tools/serve.cjs`. Open `http://127.0.0.1:8788/` and select **Explain my readings** in Training mode. The server sends its own fixed synthetic sleep example. Personal readings are assessed locally. Set `GEMINI_MODEL` to override the default model.
+
 1. In Training mode, select **Review training scenario** to see how the app highlights the last sleep reading and displays its trend.
 2. Add a reading or edit one in **Log**. Download **Crew handoff** for a readable report or the JSON report for the complete log. Training and personal records are stored separately.
 3. Open **NASA data**, switch between Curiosity’s detectors and select an observation. Compare the chart and source table. The archive is also available offline.
 
 ## Data and resources
+
+- Anatomy meshes are distributed separately from application code. Skin and organs are BodyParts3D, © The Database Center for Life Science, under [CC BY-SA 2.1 Japan](https://creativecommons.org/licenses/by-sa/2.1/jp/). [Original dataset](https://doi.org/10.18908/lsdba.nbdc00837-000). The skeleton is Open3Dmodel under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). [Open3Dmodel source](https://anatomytool.org/open3dmodel-create). The [GLB sources](https://github.com/yamz8/human-body-simulator/tree/main/public/models) are unchanged on disk. The viewer adjusts their scale and materials and mirrors right-side bones where needed.
 
 - [NASA PDS MSL RAD RDR V1.0](https://pds.nasa.gov/ds-view/pds/viewProfile.jsp?dsid=MSL-M-RAD-3-RDR-V1.0) provides historical rover measurements shown in **NASA data**. The app plots both detectors’ published absorbed dose rates in µGy/h for the 14 observations in the [Sol 1 data product](https://pds-ppi.igpp.ucla.edu/data/MSL-M-RAD-3-RDR-V1.0/DATA/SOL_00000_00089/RAD_RDR_2012_220_02_25_0001_V00.TXT). The [PDS label](https://pds-ppi.igpp.ucla.edu/data/MSL-M-RAD-3-RDR-V1.0/DATA/SOL_00000_00089/RAD_RDR_2012_220_02_25_0001_V00.LBL) supplies units and byte offsets. The [instrument specification](https://pds-ppi.igpp.ucla.edu/data/MSL-M-RAD-3-RDR-V1.0/DOCUMENT/RAD_RDR_SIS.PDF) describes the detectors and product structure.
 - [NASA Human Research Program’s five spaceflight hazards](https://www.nasa.gov/hrp/hazards/) informs the Crew guide.

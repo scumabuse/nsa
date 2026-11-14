@@ -184,6 +184,24 @@ a { color: var(--blue); }
 button:disabled { opacity: .55; cursor: default; }
 :focus-visible { outline: 3px solid #a3e4fd; outline-offset: 3px; }
 [hidden] { display: none !important; }
+.health-alert {
+  position: fixed;
+  inset: auto 1rem max(1rem, env(safe-area-inset-bottom)) auto;
+  z-index: 5;
+  width: min(23rem, calc(100vw - 2rem));
+  padding: .85rem 3rem .85rem 1rem;
+  border: 1px solid #756347;
+  border-inline-start: 3px solid var(--watch);
+  border-radius: .7rem;
+  background: #111826f5;
+  box-shadow: 0 .75rem 2rem #0008;
+  font-size: .9rem;
+}
+.health-alert[data-level="urgent"] { border-inline-start-color: var(--urgent); }
+.health-alert[data-level="urgent"] strong { color: var(--urgent); }
+.health-alert strong { color: var(--watch); }
+.health-alert p { margin: .28rem 0 0; }
+.health-alert .close { position: absolute; inset: .55rem .55rem auto auto; }
 .wrap { width: min(1120px, calc(100% - 2.5rem)); margin-inline: auto; }
 .topbar { background: #03050c99; border-bottom: 1px solid #34456188; }
 .header-row, .brand, nav, .hero, .page-head, .section-head, .chart-controls, .dialog-head, .dialog-actions, footer {
@@ -232,7 +250,40 @@ h3 { font-size: 1.02rem; }
 .banner.watch { border-color: var(--watch); }
 .banner.urgent { border-color: var(--urgent); }
 .banner p + p { margin-top: .35rem; }
-.metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .8rem; }
+.metrics { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:clamp(1rem, 3vw, 2rem); }
+.metric-list { display:grid; grid-template-rows:repeat(6, minmax(3rem, 1fr)); gap:.4rem; }
+.metric-row {
+  display:grid; grid-template-columns:1.8rem minmax(0, 1fr) auto; align-items:center; gap:.7rem;
+  text-align:start; width:100%; padding:.65rem .75rem; border:1px solid transparent;
+  border-bottom-color:var(--border); border-radius:.55rem;
+  background:#080d1680; color:var(--muted);
+  transition:background .2s, border-color .2s, color .2s;
+}
+.metric-row:hover, .metric-row[aria-pressed=true] { background:#152338bc; border-color:#819fbd; color:#f3f8ff; }
+.metric-index { display:grid; place-items:center; aspect-ratio:1; border-radius:50%; background:#25374f; font-size:.8rem; }
+.metric-row[aria-pressed=true] .metric-index { background:var(--blue); color:#091528; }
+.metric-row-value { font-variant-numeric:tabular-nums; }
+.metric-detail { min-width:0; overflow:hidden; }
+#inline-entry { padding:.8rem .9rem; border:1px solid var(--border); border-radius:.55rem; background:#080d1680; }
+#inline-entry form, #inline-entry label { display:grid; gap:.3rem; }
+#inline-entry :is(input:not([type=checkbox]), select, textarea) { background:#0b1425a8; border-color:#9cb8d052; padding:.32rem .5rem; }
+#inline-entry textarea { min-height:2.5rem; height:2.5rem; }
+#inline-entry .dialog-actions { gap:.45rem; }
+#inline-entry .dialog-actions button { padding:.35rem .65rem; }
+#inline-entry #entry-mode { font-size:.8rem; }
+#inline-entry .dialog-head .close { display:none; }
+#inline-entry label.checkbox { display:flex; align-items:center; }
+#metric-summary .metric-card { border:0; padding:.65rem .2rem; background:none; }
+#metric-summary .metric-value { font-size:1.25rem; margin-top:.15rem; }
+#metric-summary .metric-card p { margin-top:.15rem; }
+#metric-summary .card-actions { margin-top:.35rem; }
+.metric-card { padding:1.3rem; border:1px solid var(--border); border-radius:.75rem; background:linear-gradient(135deg,#152236db,#090f1ac2); }
+.metric-card p + p { margin-top:.35rem; }
+@media (max-width:680px) {
+  .metrics { grid-template-columns:1fr; gap:.75rem; }
+  .metric-list { grid-template-rows:none; }
+}
+@media (prefers-reduced-motion:reduce) { .metric-row { transition:none; } }
 .panel, .card { border-top: 1px solid var(--border); padding: 1rem 0; min-width: 0; }
 .metric-head { display: flex; align-items: center; justify-content: space-between; gap: .45rem; flex-wrap: wrap; }
 .metric-value { margin-top: .45rem; font-size: 1.8rem; font-weight: 650; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
@@ -293,7 +344,6 @@ dialog .checkbox { display: flex; align-items: center; gap: .45rem; }
 .visually-hidden, .skip:not(:focus) { position: absolute; width: 1px; height: 1px; clip-path: inset(50%); overflow: hidden; }
 .skip:focus { position: fixed; top: .3rem; left: .3rem; z-index: 1; background: var(--bg); padding: .5rem; }
 @media (max-width: 830px) {
-  .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 620px) {
   .wrap { width: calc(100% - 1.25rem); }

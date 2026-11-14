@@ -1,8 +1,12 @@
 'use strict';
 
-const cacheName = 'orbit-health-shell-v38';
+const cacheName = 'orbit-health-shell-v51';
 const shell = ['./index.html', './styles.css', './model.js', './rad-data.js', './app.js', './bodymap.js', './bodymap.css', './checkin.js', './space-models.js'];
-shell.push('./planet-maps/moon-relief.webp', './planet-maps/mars-relief.webp', './pavlodar-crest.png', './language.js', './nasa-logo.svg');
+shell.push('./anatomy-3d.js', './vendor/three.module.min.js', './vendor/three.core.min.js', './vendor/SVGLoader.js');
+shell.push('./vendor/GLTFLoader.js', './vendor/DRACOLoader.js', './vendor/utils/BufferGeometryUtils.js',
+  './vendor/utils/SkeletonUtils.js', './vendor/draco/gltf/draco_decoder.wasm', './vendor/draco/gltf/draco_wasm_wrapper.js',
+  './anatomy/anatomy-skin.glb', './anatomy/anatomy-organs.glb', './anatomy/overview-skeleton.glb');
+shell.push('./planet-maps/moon-relief.webp', './planet-maps/mars-relief.webp', './pavlodar-crest.png', './language.js', './nasa-logo.svg', './assistant.js');
 for (const name of ['earth_daymap', 'earth_clouds', 'saturn', 'moon', 'mars']) {
   shell.push('./planet-maps/' + name + '.jpg');
 }

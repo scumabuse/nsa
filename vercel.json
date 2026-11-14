@@ -1,0 +1,8 @@
+{
+  "framework": null,
+  "outputDirectory": "dist",
+  "buildCommand": "",
+  "functions": {
+    "api/training-explanation.js": { "maxDuration": 30 }
+  }
+}

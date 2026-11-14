@@ -24,11 +24,16 @@ async function run() {
       await id('entry-note').fill(note);
     };
     const save = async () => {
-      await id('entry-dialog').getByRole('button', { name: 'Save' }).click();
+      const inline = await id('inline-entry').locator('form:visible').count();
+      await id('entry-form').getByRole('button', { name: 'Save' }).click();
+      if (inline) {
+        await page.waitForFunction(() => [...document.querySelectorAll('#entry-values input')].every(input => input.value === ''));
+        return;
+      }
       await id('entry-dialog').waitFor({ state: 'hidden', timeout: 5000 });
     };
     await page.goto(base);
-    assert.equal(await id('metrics').locator('.card').count(), 6);
+    assert.equal(await id('metrics').locator('.metric-row').count(), 6);
     assert.match(await id('attention').innerText(), /Sleep/);
     assert.equal(await id('trend').locator('polyline').count(), 2);
     await id('period').selectOption('all');
@@ -79,7 +84,8 @@ async function run() {
     await page.getByRole('link', { name: 'Overview', exact: true }).click();
     await visible(id('overview-title'));
     assert.match(await id('attention').innerText(), /onboard medic/);
-    const glucose = id('metrics').locator('article').filter({ has: page.getByRole('heading', { name: 'Glucose', exact: true }) });
+    await id('metrics').locator('[data-metric="glucose"]').click();
+    const glucose = id('metric-detail').locator('article').filter({ has: page.getByRole('heading', { name: 'Glucose', exact: true }) });
     await glucose.getByRole('button', { name: 'View trend' }).click();
     assert.equal(await id('trend-context').inputValue(), 'fasting');
     assert.match(await id('trend').innerText(), /97/);
@@ -138,7 +144,9 @@ async function run() {
     await save();
     await add('mood', { value: 5 });
     await save();
-    const moodCard = id('metrics').locator('article').filter({ has: page.getByRole('heading', { name: 'Mood', exact: true }) });
+    await id('metrics').locator('[data-metric="mood"]').click();
+    const moodCard = id('metric-detail').locator('article').filter({ has: page.getByRole('heading', { name: 'Mood', exact: true }) });
+    await visible(moodCard);
     assert.match(await moodCard.locator('.metric-value').innerText(), /5/);
     await id('mode').selectOption('personal');
     await page.getByRole('link', { name: 'Log', exact: true }).click();

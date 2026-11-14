@@ -18,6 +18,9 @@ let editing = null;
 let deleting = null;
 let page = 1;
 let section = 'overview';
+let activeMetric = 'bp';
+let metricTransition;
+let metricIntroPlayed = false;
 
 function element(tag, content, className) {
   const node = document.createElement(tag);
@@ -113,8 +116,63 @@ function renderOverview() {
       element('p', entries.length ? 'Check reading dates and the status shown for each metric.' : 'Add a reading to start tracking.'));
   }
   $('mode-description').textContent = mode === 'demo' ? 'Training mode · Synthetic crew records' : 'Personal log · On this device';
-  $('metrics').replaceChildren(...latest.map(({ metric, entry, level, reason, action }) => {
-    const card = element('article', undefined, 'card');
+  renderMetricList(latest);
+  renderTrend();
+}
+
+function renderMetricList(latest) {
+  metricTransition?.cancel();
+  const list = $('metrics');
+  const detail = $('metric-detail');
+  const rows = latest.map(({ metric, entry }, index) => {
+    const row = button(metrics[metric].label, () => selectMetric(metric), 'metric-row');
+    row.dataset.metric = metric;
+    row.setAttribute('aria-controls', detail.id);
+    const indexLabel = element('span', String(index + 1), 'metric-index');
+    indexLabel.setAttribute('aria-hidden', 'true');
+    row.replaceChildren(indexLabel, element('span', metrics[metric].label),
+      element('strong', entry ? reading(entry) : '—', 'metric-row-value'));
+    return row;
+  });
+  if (detail.parentElement === list) list.after(detail);
+  list.replaceChildren(...rows);
+  selectMetric(activeMetric, false);
+  if (!metricIntroPlayed && flightMotion.matches && 'IntersectionObserver' in window) {
+    const observer = new IntersectionObserver(([item]) => {
+      if (!item.isIntersecting) return;
+      observer.disconnect();
+      if (metricIntroPlayed || !rows[0]?.isConnected) return;
+      metricIntroPlayed = true;
+      rows.forEach((row, index) => row.animate([{ opacity: 0, transform: 'translateY(8px)' },
+        { opacity: 1, transform: 'none' }], { duration: 350, delay: index * 70, easing: 'ease-out', fill: 'backwards' }));
+    });
+    observer.observe(list);
+    list.metricObserver?.disconnect();
+    list.metricObserver = observer;
+  }
+
+  async function selectMetric(metric, animate = true) {
+    activeMetric = metric;
+    rows.forEach(row => row.setAttribute('aria-pressed', String(row.dataset.metric === metric)));
+    metricTransition?.cancel();
+    const motion = animate && flightMotion.matches && detail.animate;
+    const mobile = matchMedia('(max-width: 680px)').matches;
+    if (mobile) {
+      rows.find(row => row.dataset.metric === metric).after(detail);
+    } else if (detail.parentElement === list) {
+      list.after(detail);
+    }
+    const timing = { duration: 350, easing: 'cubic-bezier(.4, 0, .2, 1)' };
+    if (motion && !mobile && detail.firstChild) {
+      const exit = detail.animate([{ opacity: 1 }, { opacity: 0, transform: 'translateY(-8px) scale(.98)' }],
+        { ...timing, duration: 135, fill: 'forwards' });
+      metricTransition = exit;
+      try { await exit.finished; } catch { return; }
+      if (metricTransition !== exit) return;
+      exit.cancel();
+    }
+    const { entry, level, reason, action } = latest.find(item => item.metric === metric);
+    const card = element('article', undefined, 'metric-card');
     const head = element('div', undefined, 'metric-head');
     head.append(element('h3', metrics[metric].label), badge(level));
     const value = element('p', entry ? reading(entry) : '—', 'metric-value');
@@ -122,12 +180,21 @@ function renderOverview() {
     const meta = element('p', entry ? dateTime.format(new Date(entry.at)) : 'No reading', 'hint');
     if (metric === 'glucose' && entry) meta.append(' · ' + contexts[entry.context ?? 'unspecified']);
     const actions = element('div', undefined, 'card-actions');
-    actions.append(button('Add reading', () => openEntry(metric)), button('View trend', () => showTrend(metric, entry)));
+    actions.append(button('View trend', () => showTrend(metric, entry)));
     card.append(head, value, meta, element('p', reason, 'hint'), element('p', action), actions);
-    return card;
-  }));
-  renderTrend();
+    $('metric-summary').replaceChildren(card);
+    mountInlineEntry(metric);
+    if (motion) {
+      metricTransition = detail.animate(mobile
+        ? [{ opacity: 0, maxHeight: '0px' }, { opacity: 1, maxHeight: detail.scrollHeight + 'px' }]
+        : [{ opacity: 0, transform: 'translateY(12px) scale(.98)' }, { opacity: 1, transform: 'none' }], timing);
+    }
+  }
 }
+
+matchMedia('(max-width: 680px)').addEventListener('change', () => {
+  if (section === 'overview') renderMetricList(latestReadings());
+});
 
 function showTrend(metric, entry) {
   $('trend-metric').value = metric;
@@ -402,7 +469,30 @@ function route(focus = false) {
   }
 }
 
+let dismissedHealthAlert = '';
+let currentHealthAlert = '';
+
+function renderHealthAlert() {
+  const alert = $('health-alert');
+  const flagged = latestReadings().filter(item => item.level === 'urgent' || item.level === 'watch');
+  const urgent = flagged.some(item => item.level === 'urgent');
+  const relevant = urgent ? flagged.filter(item => item.level === 'urgent') : flagged;
+  currentHealthAlert = relevant.length
+    ? JSON.stringify([mode, ...relevant.map(item => [item.entry.id, item.level, item.entry.at, item.entry.values])])
+    : '';
+  if (!currentHealthAlert) dismissedHealthAlert = '';
+  alert.hidden = !currentHealthAlert || currentHealthAlert === dismissedHealthAlert;
+  if (alert.hidden) return;
+  alert.dataset.level = urgent ? 'urgent' : 'watch';
+  $('health-alert-title').textContent = urgent ? 'Serious symptoms reported' : 'Review needed';
+  if (mode === 'demo') $('health-alert-title').append(' · ', element('span', 'Training'));
+  $('health-alert-metrics').replaceChildren(...relevant.map((item, index) =>
+    element('span', (index ? ', ' : '') + metrics[item.metric].label)));
+  $('health-alert-action').textContent = urgent ? relevant[0].action : 'See the metric cards for next steps.';
+}
+
 function render() {
+  renderHealthAlert();
   if (section === 'overview') renderOverview();
   if (section === 'journal') renderJournal();
   if (section === 'radiation') renderRadiation();
@@ -442,7 +532,7 @@ function renderFields(values = {}, context = 'unspecified') {
   }
 }
 
-function openEntry(metric = 'bp', row = null) {
+function prepareEntry(metric, row = null) {
   editing = row;
   $('entry-form').reset();
   $('entry-title').textContent = row ? 'Edit reading' : 'New reading';
@@ -455,7 +545,31 @@ function openEntry(metric = 'bp', row = null) {
   $('urgent-hint').hidden = !$('entry-urgent').checked;
   $('entry-error').hidden = true;
   renderFields(row?.values, row?.context);
-  $('entry-dialog').showModal();
+}
+
+function mountInlineEntry(metric) {
+  if ($('entry-dialog').open) return;
+  const form = $('entry-form');
+  const moved = form.parentElement !== $('inline-entry');
+  if (moved) $('inline-entry').append(form);
+  if (moved || form.dataset.mode !== mode || $('entry-metric').value !== metric) {
+    form.dataset.mode = mode;
+    prepareEntry(metric);
+  }
+}
+
+function openEntry(metric = 'bp', row = null) {
+  if (section === 'overview' && !row) {
+    activeMetric = metric;
+    renderMetricList(latestReadings());
+    $('entry-form').scrollIntoView({ block: 'nearest' });
+    $('entry-values').querySelector('input')?.focus({ preventScroll: true });
+    return;
+  }
+  const dialog = $('entry-dialog');
+  dialog.append($('entry-form'));
+  prepareEntry(metric, row);
+  dialog.showModal();
 }
 
 function showError(id, message) {
@@ -489,7 +603,8 @@ function saveEntry(event) {
     return showError('entry-error', failure.message === 'missing' ? 'This reading has already been deleted. Close the form and reload the log.' : 'Could not save the reading. Check browser storage permissions.');
   }
   if (!editing) page = 1;
-  $('entry-dialog').close();
+  if ($('entry-dialog').open) $('entry-dialog').close();
+  else prepareEntry(metric);
   render();
   if (section === 'journal') $('journal-filter').focus();
   notify('Reading saved.');
@@ -583,6 +698,10 @@ try {
   // reloadJournal surfaces storage errors.
 }
 $('mode').value = mode;
+$('dismiss-health-alert').addEventListener('click', () => {
+  dismissedHealthAlert = currentHealthAlert;
+  $('health-alert').hidden = true;
+});
 reloadJournal();
 drawStarField();
 route();
@@ -608,6 +727,12 @@ $('mode').addEventListener('change', () => {
 });
 $('journal-filter').addEventListener('change', () => { page = 1; renderJournal(); });
 $('entry-metric').addEventListener('change', () => {
+  if (!$('entry-dialog').open) {
+    activeMetric = $('entry-metric').value;
+    prepareEntry(activeMetric);
+    renderMetricList(latestReadings());
+    return;
+  }
   $('entry-error').hidden = true;
   renderFields();
 });
@@ -623,7 +748,11 @@ $('export-handoff').addEventListener('click', exportHandoff);
 $('review-scenario').addEventListener('click', () => showTrend('sleep'));
 for (const id of ['rad-detector', 'rad-observation']) $(id).addEventListener('change', renderRadiation);
 for (const trigger of document.querySelectorAll('[data-add]')) trigger.addEventListener('click', () => openEntry());
-for (const trigger of document.querySelectorAll('[data-close]')) trigger.addEventListener('click', () => trigger.closest('dialog').close());
+for (const trigger of document.querySelectorAll('[data-close]')) trigger.addEventListener('click', () => {
+  const dialog = trigger.closest('dialog');
+  if (dialog) dialog.close();
+  else prepareEntry(activeMetric);
+});
 
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   navigator.serviceWorker.register('./sw.js').then(() => navigator.serviceWorker.ready).then(() => {

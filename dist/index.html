@@ -14,6 +14,7 @@
   <script defer src="./app.js"></script>
   <script defer src="./bodymap.js"></script>
   <script defer src="./checkin.js"></script>
+  <script defer src="./assistant.js"></script>
   <script defer src="./space-models.js"></script>
 </head>
 <body>
@@ -30,6 +31,14 @@
     </div>
   </div>
   <div class="space-flight" aria-hidden="true"><div class="space-streaks" id="space-flight"></div></div>
+  <aside id="health-alert" class="health-alert" hidden aria-labelledby="health-alert-title">
+    <button id="dismiss-health-alert" type="button" class="close" aria-label="Dismiss health alert">×</button>
+    <div id="health-alert-content" aria-live="polite" aria-atomic="true">
+      <strong id="health-alert-title"></strong>
+      <p id="health-alert-metrics"></p>
+      <p id="health-alert-action"></p>
+    </div>
+  </aside>
   <a class="skip" href="#main">Skip to content</a>
   <header class="topbar">
     <div class="wrap header-row">
@@ -54,9 +63,22 @@
         <div class="hero-actions"><button class="primary" data-add>＋ New reading</button><button id="review-scenario" class="secondary" hidden>Review training scenario</button></div>
       </div>
       <div id="attention" class="banner" aria-live="polite"></div>
+      <section class="panel guide-note" aria-labelledby="assistant-title">
+        <div class="section-head">
+          <h2 id="assistant-title">Reading assistant</h2>
+          <button id="explain-readings" class="secondary" type="button">Explain my readings</button>
+        </div>
+        <div id="reading-explanation" aria-live="polite"></div>
+      </section>
       <section aria-labelledby="metrics-title">
         <div class="section-head"><h2 id="metrics-title">Health metrics</h2><span class="muted">Latest readings</span></div>
-        <div id="metrics" class="metrics"></div>
+        <div class="metrics">
+          <div id="metrics" class="metric-list"></div>
+          <div id="metric-detail" class="metric-detail">
+            <div id="inline-entry"></div>
+            <div id="metric-summary" aria-live="polite"></div>
+          </div>
+        </div>
       </section>
       <div class="section-head"><h2 id="trend-title">Trends</h2></div>
       <section class="panel" aria-labelledby="trend-title">
