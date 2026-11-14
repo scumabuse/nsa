@@ -1,7 +1,7 @@
 'use strict';
 
-const cacheName = 'orbit-health-shell-v2';
-const shell = ['./index.html', './styles.css', './model.js', './rad-data.js', './app.js'];
+const cacheName = 'orbit-health-shell-v3';
+const shell = ['./index.html', './styles.css', './model.js', './rad-data.js', './app.js', './bodymap.js', './bodymap.css', './checkin.js'];
 const assetUrls = new Set(shell.map((path) => new URL(path, self.registration.scope).href));
 const entryUrl = new URL('./index.html', self.registration.scope).href;
 
