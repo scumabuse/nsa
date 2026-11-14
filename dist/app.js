@@ -4,13 +4,13 @@ const { metrics, validate, assess, demoEntries } = OrbitModel;
 const $ = (id) => document.getElementById(id);
 const modes = ['demo', 'personal'];
 const prefix = 'orbit-health.v1.';
-const contexts = { fasting: 'Натощак', postmeal: 'После еды', unspecified: 'Условия не указаны' };
+const contexts = { fasting: 'Fasting', postmeal: 'After a meal', unspecified: 'Unspecified' };
 const colors = ['#aac5ff', '#7de0bd'];
-const dateTime = new Intl.DateTimeFormat('ru-RU', { dateStyle: 'short', timeStyle: 'short' });
-const shortDate = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short' });
-const number = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 });
+const dateTime = new Intl.DateTimeFormat('en-GB', { dateStyle: 'short', timeStyle: 'short' });
+const shortDate = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short' });
+const number = new Intl.NumberFormat('en-GB', { maximumFractionDigits: 2 });
 const day = 86_400_000;
-const routes = ['overview', 'journal', 'guide'];
+const routes = ['overview', 'journal', 'radiation', 'guide'];
 const demoSeed = demoEntries(Date.now() - 3_600_000);
 let mode = 'demo';
 let entries = [];
@@ -65,7 +65,7 @@ function reloadJournal() {
     storageWarning();
   } catch {
     entries = mode === 'demo' ? [...demoSeed] : [];
-    storageWarning('Журнал недоступен. Проверьте доступ браузера к локальному хранилищу. Исходные записи сохранены в прежнем виде.');
+    storageWarning('The journal could not be opened. Check browser storage permissions. Stored records were left intact.');
   }
 }
 
@@ -78,11 +78,11 @@ function updateJournal(change) {
 
 function statusText(level) {
   return {
-    ok: mode === 'demo' ? 'В демодиапазоне' : 'Близко к истории',
-    watch: 'Требует внимания',
-    urgent: 'Серьёзные симптомы',
-    stale: 'Обновите замер',
-    unknown: 'Недостаточно данных',
+    ok: mode === 'demo' ? 'Within demo range' : 'Near personal baseline',
+    watch: 'Review needed',
+    urgent: 'Serious symptoms',
+    stale: 'Reading out of date',
+    unknown: 'Insufficient data',
   }[level];
 }
 
@@ -95,10 +95,8 @@ function reading(entry) {
 }
 
 function renderOverview() {
-  const latest = Object.keys(metrics).map((metric) => {
-    const entry = entries.find((row) => row.metric === metric);
-    return { metric, entry, ...assess(entry, entries) };
-  });
+  $('review-scenario').hidden = mode !== 'demo';
+  const latest = latestReadings();
   const urgent = latest.filter((item) => item.level === 'urgent');
   const watch = latest.filter((item) => item.level === 'watch');
   const attention = $('attention');
@@ -106,35 +104,37 @@ function renderOverview() {
   attention.replaceChildren();
   if (urgent.length) {
     attention.classList.add('urgent');
-    attention.append(element('strong', 'Отмечены серьёзные симптомы'), element('p', urgent[0].action));
+    attention.append(element('strong', 'Serious symptoms reported'), element('p', urgent[0].action));
   } else if (watch.length) {
     attention.classList.add('watch');
-    attention.append(element('strong', 'Требует внимания'), element('p', watch.map(({ metric }) => metrics[metric].label).join(', ') + '. Подробности и действия указаны в карточках.'));
+    attention.append(element('strong', 'Review needed'), element('p', watch.map(({ metric }) => metrics[metric].label).join(', ') + '. See the metric cards for next steps.'));
   } else {
-    attention.append(element('strong', entries.length ? 'Последние измерения' : 'В журнале пока нет измерений'),
-      element('p', entries.length ? 'Проверьте наличие свежих данных и пояснения к статусам.' : 'Добавьте первый замер, чтобы начать наблюдение.'));
+    attention.append(element('strong', entries.length ? 'Latest readings' : 'No readings yet'),
+      element('p', entries.length ? 'Check reading dates and the status shown for each metric.' : 'Add a reading to start tracking.'));
   }
-  $('mode-description').textContent = mode === 'demo' ? 'Демонстрация · Синтетические данные' : 'Личный журнал · На этом устройстве';
+  $('mode-description').textContent = mode === 'demo' ? 'Training mode · Synthetic crew records' : 'Personal log · On this device';
   $('metrics').replaceChildren(...latest.map(({ metric, entry, level, reason, action }) => {
     const card = element('article', undefined, 'card');
     const head = element('div', undefined, 'metric-head');
     head.append(element('h3', metrics[metric].label), badge(level));
     const value = element('p', entry ? reading(entry) : '—', 'metric-value');
     if (entry) value.append(element('span', metrics[metric].unit, 'metric-unit'));
-    const meta = element('p', entry ? dateTime.format(new Date(entry.at)) : 'Нет записи', 'hint');
+    const meta = element('p', entry ? dateTime.format(new Date(entry.at)) : 'No reading', 'hint');
     if (metric === 'glucose' && entry) meta.append(' · ' + contexts[entry.context ?? 'unspecified']);
     const actions = element('div', undefined, 'card-actions');
-    actions.append(button('Добавить замер', () => openEntry(metric)), button('График', () => {
-      $('trend-metric').value = metric;
-      if (metric === 'glucose' && entry) $('trend-context').value = entry.context ?? 'unspecified';
-      renderTrend();
-      $('trend-metric').focus({ preventScroll: true });
-      $('trend-title').scrollIntoView();
-    }));
+    actions.append(button('Add reading', () => openEntry(metric)), button('View trend', () => showTrend(metric, entry)));
     card.append(head, value, meta, element('p', reason, 'hint'), element('p', action), actions);
     return card;
   }));
   renderTrend();
+}
+
+function showTrend(metric, entry) {
+  $('trend-metric').value = metric;
+  if (metric === 'glucose' && entry) $('trend-context').value = entry.context ?? 'unspecified';
+  renderTrend();
+  $('trend-metric').focus({ preventScroll: true });
+  $('trend-title').scrollIntoView();
 }
 
 function svg(tag, attrs, content) {
@@ -142,6 +142,52 @@ function svg(tag, attrs, content) {
   for (const [name, value] of Object.entries(attrs)) node.setAttribute(name, value);
   if (content !== undefined) node.textContent = content;
   return node;
+}
+
+function renderRadiation() {
+  const { observations, unit } = OrbitRadData;
+  const detector = $('rad-detector').value;
+  const selected = observations.find((row) => row.id === $('rad-observation').value);
+  const detectorLabel = 'Detector ' + detector.toUpperCase();
+  const utcTime = (row) => row.utc.slice(11, 19);
+  const rate = (row) => row[detector] === null ? 'Unavailable' :
+    new Intl.NumberFormat('en-GB', { maximumFractionDigits: 5 }).format(row[detector]) + ' ' + unit;
+  $('rad-reading').textContent = detectorLabel + ' · ' + utcTime(selected) + ' UTC · ' + rate(selected);
+  $('rad-table-unit').textContent = detectorLabel + ' (' + unit + ')';
+  $('rad-table').replaceChildren(...observations.map((row) => {
+    const tr = element('tr');
+    if (row === selected) tr.classList.add('selected-row');
+    const th = element('th', utcTime(row));
+    th.scope = 'row';
+    tr.append(th, element('td', rate(row)));
+    return tr;
+  }));
+  const valid = observations.filter((row) => row[detector] !== null);
+  const min = Math.floor(Math.min(...valid.map((row) => row[detector])));
+  const max = Math.ceil(Math.max(...valid.map((row) => row[detector])));
+  const start = Date.parse(observations[0].utc);
+  const duration = Date.parse(observations.at(-1).utc) - start;
+  const x = (row) => 55 + 489 * (Date.parse(row.utc) - start) / duration;
+  const y = (value) => 155 - 130 * (value - min) / Math.max(max - min, 1);
+  const plot = svg('svg', { viewBox: '0 0 600 191', class: 'plot', role: 'img',
+    'aria-label': detectorLabel + ' absorbed dose rate over observation start time in UTC. Values are also available in the table.' });
+  for (let tick = 0; tick <= 4; tick++) {
+    const value = min + (max - min) * tick / 4;
+    plot.append(svg('line', { x1: 55, x2: 544, y1: y(value), y2: y(value), stroke: '#40516e' }),
+      svg('text', { x: 47, y: y(value) + 4, 'text-anchor': 'end', fill: '#c7d3e9', 'font-size': 12 }, number.format(value)));
+  }
+  for (const row of [observations[0], observations.at(-1)]) {
+    plot.append(svg('text', { x: x(row), y: 177, 'text-anchor': row === observations[0] ? 'start' : 'end',
+      fill: '#c7d3e9', 'font-size': 12 }, utcTime(row) + ' UTC'));
+  }
+  for (const row of valid) {
+    const current = row === selected;
+    const point = svg('circle', { cx: x(row), cy: y(row[detector]), r: current ? 6 : 3.6,
+      fill: current ? '#ffda91' : colors[0] });
+    point.append(svg('title', {}, utcTime(row) + ' UTC · ' + rate(row)));
+    plot.append(point);
+  }
+  $('rad-chart').replaceChildren(plot);
 }
 
 function renderTrend() {
@@ -155,7 +201,7 @@ function renderTrend() {
   const target = $('trend');
   target.replaceChildren();
   if (!rows.length) {
-    target.append(element('p', 'За выбранный период нет измерений с этими условиями.', 'empty'));
+    target.append(element('p', 'No readings match these filters.', 'empty'));
     return;
   }
   const { fields, unit, label } = metrics[metric];
@@ -199,7 +245,7 @@ function renderTrend() {
     }
   });
   const last = rows.at(-1);
-  target.append(plot, legend, element('p', 'Записей: ' + rows.length + ' · Последнее значение: ' + reading(last) + ' ' + unit, 'hint'));
+  target.append(plot, legend, element('p', 'Readings: ' + rows.length + ' · Latest: ' + reading(last) + ' ' + unit, 'hint'));
 }
 
 function renderJournal() {
@@ -208,10 +254,11 @@ function renderJournal() {
   const pages = Math.max(1, Math.ceil(rows.length / 20));
   page = Math.min(page, pages);
   $('export').disabled = !entries.length;
+  $('export-handoff').disabled = !entries.length;
   const target = $('entries');
   target.replaceChildren();
   if (!rows.length) {
-    target.append(element('p', 'Измерений по выбранному фильтру нет.', 'empty'));
+    target.append(element('p', 'No readings match this filter.', 'empty'));
     return;
   }
   for (const row of rows.slice((page - 1) * 20, page * 20)) {
@@ -225,14 +272,14 @@ function renderJournal() {
     if (row.metric === 'glucose') info.append(element('p', contexts[row.context ?? 'unspecified'], 'hint'));
     if (row.note) info.append(element('p', row.note, 'hint'));
     const actions = element('div', undefined, 'card-actions');
-    actions.append(button('Изменить', () => openEntry(row.metric, row)), button('Удалить', () => openDelete(row)));
+    actions.append(button('Edit', () => openEntry(row.metric, row)), button('Delete', () => openDelete(row)));
     item.append(time, info, actions);
     target.append(item);
   }
   if (pages > 1) {
     const controls = element('div', undefined, 'card-actions');
-    const prev = button('Назад', () => changePage(page - 1));
-    const next = button('Далее', () => changePage(page + 1));
+    const prev = button('Previous', () => changePage(page - 1));
+    const next = button('Next', () => changePage(page + 1));
     prev.disabled = page === 1;
     next.disabled = page === pages;
     controls.append(prev, element('span', page + ' / ' + pages, 'hint'), next);
@@ -267,6 +314,7 @@ function route(focus = false) {
 function render() {
   if (section === 'overview') renderOverview();
   if (section === 'journal') renderJournal();
+  if (section === 'radiation') renderRadiation();
 }
 
 function localTime(date = new Date()) {
@@ -293,7 +341,7 @@ function renderFields(values = {}, context = 'unspecified') {
     target.append(label);
   }
   if (metric === 'glucose') {
-    const label = element('label', 'Условия измерения');
+    const label = element('label', 'Measurement context');
     const select = element('select');
     select.id = 'entry-context';
     for (const [value, label] of Object.entries(contexts)) select.add(new Option(label, value));
@@ -306,8 +354,8 @@ function renderFields(values = {}, context = 'unspecified') {
 function openEntry(metric = 'bp', row = null) {
   editing = row;
   $('entry-form').reset();
-  $('entry-title').textContent = row ? 'Изменить измерение' : 'Новое измерение';
-  $('entry-mode').textContent = mode === 'demo' ? 'Демонстрационный журнал' : 'Личный журнал';
+  $('entry-title').textContent = row ? 'Edit reading' : 'New reading';
+  $('entry-mode').textContent = mode === 'demo' ? 'Training log' : 'Personal log';
   $('entry-metric').value = metric;
   $('entry-time').value = localTime(row ? new Date(row.at) : new Date());
   $('entry-time').max = localTime();
@@ -347,13 +395,13 @@ function saveEntry(event) {
       return [row, ...current.filter((item) => item.id !== row.id)];
     });
   } catch (failure) {
-    return showError('entry-error', failure.message === 'missing' ? 'Эта запись уже удалена. Закройте форму и обновите журнал.' : 'Сохранение не удалось. Проверьте доступность хранилища браузера.');
+    return showError('entry-error', failure.message === 'missing' ? 'This reading has already been deleted. Close the form and reload the log.' : 'Could not save the reading. Check browser storage permissions.');
   }
   if (!editing) page = 1;
   $('entry-dialog').close();
   render();
   if (section === 'journal') $('journal-filter').focus();
-  notify('Измерение сохранено.');
+  notify('Reading saved.');
 }
 
 function openDelete(row) {
@@ -368,30 +416,68 @@ function deleteEntry(event) {
   try {
     updateJournal((current) => current.filter((row) => row.id !== deleting));
   } catch {
-    return showError('delete-error', 'Не удалось удалить запись. Проверьте доступность хранилища браузера.');
+    return showError('delete-error', 'Could not delete the reading. Check browser storage permissions.');
   }
   $('delete-dialog').close();
   renderJournal();
   $('journal-filter').focus();
-  notify('Измерение удалено.');
+  notify('Reading deleted.');
 }
 
-function exportJournal() {
-  const latest = Object.keys(metrics).map((metric) => {
+function latestReadings() {
+  return Object.keys(metrics).map((metric) => {
     const entry = entries.find((row) => row.metric === metric);
-    return { metric, label: metrics[metric].label, unit: metrics[metric].unit, entryId: entry?.id ?? null, ...assess(entry, entries) };
+    return { metric, entry, ...assess(entry, entries) };
   });
-  const report = { format: 'orbit-health-report', version: 1, mode, exportedAt: new Date().toISOString(), latest, entries };
-  const url = URL.createObjectURL(new Blob([JSON.stringify(report, null, 2)], { type: 'application/json;charset=utf-8' }));
+}
+
+function downloadFile(content, mimeType, filename) {
+  const url = URL.createObjectURL(new Blob([content], { type: mimeType }));
   const link = element('a');
   link.href = url;
-  link.download = 'orbit-health-' + mode + '-' + report.exportedAt.slice(0, 10) + '.json';
+  link.download = filename;
   document.body.append(link);
   link.click();
   link.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
-  notify('Сводка выгружена.');
+  notify('Report downloaded.');
 }
+
+function exportJournal() {
+  const exportedAt = new Date().toISOString();
+  const latest = latestReadings().map(({ metric, entry, ...assessment }) => ({
+    metric, label: metrics[metric].label, unit: metrics[metric].unit, entryId: entry?.id ?? null, ...assessment,
+  }));
+  const report = { format: 'orbit-health-report', version: 1, mode, exportedAt, latest, entries };
+  downloadFile(JSON.stringify(report, null, 2), 'application/json;charset=utf-8',
+    'orbit-health-' + mode + '-' + exportedAt.slice(0, 10) + '.json');
+}
+
+function exportHandoff() {
+  const exportedAt = new Date().toISOString();
+  const priority = { urgent: 0, watch: 1, stale: 2, unknown: 3, ok: 4 };
+  const blocks = latestReadings().filter(({ entry }) => entry)
+    .sort((a, b) => priority[a.level] - priority[b.level])
+    .map(({ metric, entry, level, reason, action }) => [
+      metrics[metric].label + ' · ' + reading(entry) + ' ' + metrics[metric].unit,
+      'Recorded (UTC): ' + entry.at,
+      'Status: ' + statusText(level),
+      reason,
+      'Next step: ' + action,
+      ...(metric === 'glucose' ? ['Meal context: ' + contexts[entry.context ?? 'unspecified']] : []),
+      ...(entry.note ? ['Crew note: ' + entry.note] : []),
+    ].join('\n'));
+  const header = mode === 'demo' ? 'TRAINING EXERCISE · SYNTHETIC CREW READINGS' : 'PERSONAL LOG · SHARE THROUGH THE MISSION CHANNEL';
+  downloadFile(['ORBIT HEALTH CREW HANDOFF', header, 'Prepared (UTC): ' + exportedAt,
+    'Latest recorded value per metric. This file is saved locally for manual sharing.', '', blocks.join('\n\n')].join('\n'),
+  'text/plain;charset=utf-8', 'orbit-health-handoff-' + mode + '-' + exportedAt.slice(0, 10) + '.txt');
+}
+
+for (const row of OrbitRadData.observations) {
+  $('rad-observation').add(new Option(row.utc.slice(11, 19), row.id));
+}
+$('rad-source').href = OrbitRadData.source;
+$('rad-label').href = OrbitRadData.label;
 
 for (const [metric, meta] of Object.entries(metrics)) {
   for (const id of ['entry-metric', 'trend-metric', 'journal-filter']) $(id).add(new Option(meta.label, metric));
@@ -423,10 +509,10 @@ $('mode').addEventListener('change', () => {
   try {
     localStorage.setItem(prefix + 'mode', mode);
   } catch {
-    storageWarning('Браузер не может запомнить выбранный режим. Проверьте доступ к локальному хранилищу.');
+    storageWarning('The browser could not remember the selected mode. Check local storage permissions.');
   }
   render();
-  notify(mode === 'demo' ? 'Открыт демонстрационный журнал.' : 'Открыт личный журнал.');
+  notify(mode === 'demo' ? 'Training log opened.' : 'Personal log opened.');
 });
 $('journal-filter').addEventListener('change', () => { page = 1; renderJournal(); });
 $('entry-metric').addEventListener('change', () => {
@@ -441,11 +527,14 @@ $('entry-urgent').addEventListener('change', () => { $('urgent-hint').hidden = !
 $('entry-form').addEventListener('submit', saveEntry);
 $('delete-form').addEventListener('submit', deleteEntry);
 $('export').addEventListener('click', exportJournal);
+$('export-handoff').addEventListener('click', exportHandoff);
+$('review-scenario').addEventListener('click', () => showTrend('sleep'));
+for (const id of ['rad-detector', 'rad-observation']) $(id).addEventListener('change', renderRadiation);
 for (const trigger of document.querySelectorAll('[data-add]')) trigger.addEventListener('click', () => openEntry());
 for (const trigger of document.querySelectorAll('[data-close]')) trigger.addEventListener('click', () => trigger.closest('dialog').close());
 
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   navigator.serviceWorker.register('./sw.js').then(() => navigator.serviceWorker.ready).then(() => {
-    $('offline').textContent = 'Журнал доступен без сети · Данные на этом устройстве';
+    $('offline').textContent = 'Available offline · Data stays on this device';
   }).catch(() => {});
 }

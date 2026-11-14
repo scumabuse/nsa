@@ -5,43 +5,43 @@
   const glucoseContexts = ['fasting', 'postmeal', 'unspecified'];
   const metrics = {
     bp: {
-      label: 'Давление', unit: 'мм рт. ст.',
+      label: 'Blood pressure', unit: 'mmHg',
       fields: [
-        { key: 'systolic', label: 'Систолическое', min: 20, max: 350, step: 1 },
-        { key: 'diastolic', label: 'Диастолическое', min: 10, max: 250, step: 1 },
+        { key: 'systolic', label: 'Systolic', min: 20, max: 350, step: 1 },
+        { key: 'diastolic', label: 'Diastolic', min: 10, max: 250, step: 1 },
       ],
-      guide: 'Используйте бортовой тонометр и манжету подходящего размера. Отдохните перед измерением и держите руку на уровне сердца, соблюдая протокол миссии.',
-      context: 'Сопоставляйте измерения в одинаковом положении тела и условиях. Смена гравитации влияет на распределение жидкости и работу сердечно-сосудистой системы.',
+      guide: 'Use the onboard blood pressure monitor and a correctly sized cuff. Rest first and support the arm at heart level, following mission procedure.',
+      context: 'Compare readings taken in the same posture and conditions. Changes in gravity affect fluid distribution and cardiovascular function.',
     },
     pulse: {
-      label: 'Пульс', unit: 'уд/мин',
-      fields: [{ key: 'value', label: 'Пульс', min: 1, max: 300, step: 1 }],
-      guide: 'Измерьте пульс в покое бортовым датчиком по инструкции. Если измерение сделано после нагрузки, отметьте это в заметке.',
-      context: 'Нагрузка, сон и смена гравитации могут влиять на пульс. Для сравнения измеряйте его в сходных условиях.',
+      label: 'Heart rate', unit: 'bpm',
+      fields: [{ key: 'value', label: 'Heart rate', min: 1, max: 300, step: 1 }],
+      guide: 'Use the onboard sensor as instructed. Take a resting reading and note any recent activity.',
+      context: 'Activity, sleep and gravity changes can affect heart rate. Compare readings taken under similar conditions.',
     },
     glucose: {
-      label: 'Глюкоза', unit: 'мг/дл',
-      fields: [{ key: 'value', label: 'Глюкоза', min: 1, max: 1500, step: 1 }],
-      guide: 'Используйте глюкометр по инструкции прибора и протоколу миссии. Вымойте и высушите руки перед замером. Укажите связь с приёмом пищи.',
-      context: 'Сопоставляйте замеры с одинаковой связью с приёмом пищи. Для записи после еды укажите время после приёма пищи в заметке.',
+      label: 'Glucose', unit: 'mg/dL',
+      fields: [{ key: 'value', label: 'Glucose', min: 1, max: 1500, step: 1 }],
+      guide: 'Follow the meter instructions and mission procedure. Wash and dry your hands first. Record whether the reading was taken after a meal or while fasting.',
+      context: 'Compare readings with matching meal context. For after-meal readings, note the time since the meal.',
     },
     temp: {
-      label: 'Температура', unit: '°C',
-      fields: [{ key: 'value', label: 'Температура', min: 20, max: 50, step: 0.1 }],
-      guide: 'Используйте бортовой термометр по инструкции. При повторном измерении сохраняйте способ и место замера.',
-      context: 'Температура среды, физическая нагрузка, время суток и способ измерения могут влиять на показание.',
+      label: 'Temperature', unit: '°C',
+      fields: [{ key: 'value', label: 'Temperature', min: 20, max: 50, step: 0.1 }],
+      guide: 'Use the onboard thermometer as instructed. Repeat measurements using the same method and site.',
+      context: 'Room temperature, activity, time of day and measurement method can affect the reading.',
     },
     sleep: {
-      label: 'Сон', unit: 'ч',
-      fields: [{ key: 'value', label: 'Продолжительность сна', min: 0, max: 24, step: 0.1 }],
-      guide: 'Укажите суммарное время сна за последние 24 часа, включая короткие периоды сна. Возьмите данные из журнала или носимого устройства.',
-      context: 'Освещение, шум и график смен могут нарушать сон. В заметке можно отметить смену графика или прерывания сна.',
+      label: 'Sleep', unit: 'h',
+      fields: [{ key: 'value', label: 'Sleep duration', min: 0, max: 24, step: 0.1 }],
+      guide: 'Log total sleep in the past 24 hours, including naps. Use your sleep log or wearable record.',
+      context: 'Light, noise and shift schedules can disrupt sleep. Note interruptions or recent schedule changes.',
     },
     mood: {
-      label: 'Настроение', unit: 'из 5',
-      fields: [{ key: 'value', label: 'Оценка настроения', min: 1, max: 5, step: 1 }],
-      guide: 'Оцените настроение за текущий день по шкале от 1 (очень плохое) до 5 (очень хорошее). При желании укажите обстоятельства в заметке.',
-      context: 'Изоляция, замкнутая среда и качество сна могут отражаться на настроении. Самооценка даёт контекст для разговора с медицинским специалистом.',
+      label: 'Mood', unit: '/ 5',
+      fields: [{ key: 'value', label: 'Mood rating', min: 1, max: 5, step: 1 }],
+      guide: 'Rate your mood today from 1 (very low) to 5 (very good). Add context if helpful.',
+      context: 'Isolation, confinement and sleep can affect mood. Self-reported mood can inform a conversation with a medical specialist.',
     },
   };
 
@@ -53,41 +53,41 @@
 
   function validate(entry, now = Date.now()) {
     if (!entry || typeof entry.id !== 'string' || !entry.id.trim()) {
-      return 'У записи должен быть идентификатор.';
+      return 'Each reading needs an identifier.';
     }
-    if (!Object.hasOwn(metrics, entry.metric)) return 'Выберите показатель.';
+    if (!Object.hasOwn(metrics, entry.metric)) return 'Select a metric.';
     const at = Date.parse(entry.at);
     if (!Number.isFinite(at) || new Date(at).toISOString() !== entry.at || at > now) {
-      return 'Укажите корректные дату и время замера. Замер не может быть в будущем.';
+      return 'Enter a valid date and time. A reading cannot be in the future.';
     }
     if (typeof entry.note !== 'string' || entry.note.length > 500) {
-      return 'Заметка должна содержать не более 500 символов.';
+      return 'Notes are limited to 500 characters.';
     }
     if (entry.demo !== undefined && typeof entry.demo !== 'boolean' ||
         entry.urgent !== undefined && typeof entry.urgent !== 'boolean') {
-      return 'Проверьте тип записи и отметку о симптомах.';
+      return 'Check the reading type and symptom flag.';
     }
     if (entry.context !== undefined &&
         (entry.metric !== 'glucose' || !glucoseContexts.includes(entry.context))) {
-      return 'Укажите условия измерения глюкозы.';
+      return 'Check the glucose measurement context.';
     }
     const { fields } = metrics[entry.metric];
     const { values } = entry;
     if (!values || typeof values !== 'object' || Object.keys(values).length !== fields.length ||
         !fields.every(({ key }) => Object.hasOwn(values, key))) {
-      return 'Заполните все поля показателя.';
+      return 'Complete all fields for the metric.';
     }
     for (const { key, label, min, max, step } of fields) {
       const value = values[key];
       if (!Number.isFinite(value) || value < min || value > max) {
-        return `${label} — укажите число от ${min} до ${max}.`;
+        return `${label} — enter a number from ${min} to ${max}.`;
       }
       if (Math.abs(value / step - Math.round(value / step)) > 1e-8) {
-        return `${label} — допустимый шаг ${step}.`;
+        return `${label} — use increments of ${step}.`;
       }
     }
     if (entry.metric === 'bp' && values.systolic <= values.diastolic) {
-      return 'Систолическое давление должно быть выше диастолического.';
+      return 'Systolic pressure must be higher than diastolic pressure.';
     }
     return '';
   }
@@ -134,69 +134,69 @@
     };
     if (metric === 'glucose' && (!entry.context || entry.context === 'unspecified')) {
       return {
-        level: 'unknown', reason: 'Не указана связь замера глюкозы с приёмом пищи.',
-        action: 'Укажите условия замера, чтобы выбрать учебный диапазон.',
+        level: 'unknown', reason: 'Meal context is missing.',
+        action: 'Add meal context to select the demo range.',
       };
     }
     if (outside[metric]()) {
       return {
-        level: 'watch', reason: 'Значение за пределами диапазона учебного сценария.',
-        action: 'В сценарии следует проверить условия замера, повторить его по протоколу и сообщить медику экипажа, если отклонение подтвердится.',
+        level: 'watch', reason: 'This reading is outside the training range.',
+        action: 'Review measurement conditions, repeat per mission procedure and contact the crew medic if the change persists.',
       };
     }
     return {
-      level: 'ok', reason: 'Значение в пределах диапазона учебного сценария.',
-      action: 'Продолжайте плановые записи по графику учебной миссии.',
+      level: 'ok', reason: 'This reading is within the training range.',
+      action: 'Continue scheduled readings for the exercise.',
     };
   }
 
   function assess(entry, entries = [], now = Date.now()) {
     if (!entry) {
-      return { level: 'unknown', reason: 'Измерений пока нет.', action: 'Добавьте запись в журнал.' };
+      return { level: 'unknown', reason: 'No readings yet.', action: 'Add a reading to the log.' };
     }
     if (entry.urgent === true) {
       return {
-        level: 'urgent', reason: 'Отмечены острые симптомы.',
-        action: 'Немедленно оповестите экипаж и бортового медика. Действуйте по аварийному медицинскому протоколу миссии и не ждите ответа с Земли.',
+        level: 'urgent', reason: 'Serious symptoms reported.',
+        action: 'Notify the crew and onboard medic immediately. Follow the mission emergency medical protocol without waiting for Earth.',
       };
     }
     if (validate(entry, now)) {
       return {
-        level: 'unknown', reason: 'В записи есть некорректные данные.',
-        action: 'Проверьте время и значения измерения.',
+        level: 'unknown', reason: 'This reading contains invalid data.',
+        action: 'Check the timestamp and values.',
       };
     }
     if (now - Date.parse(entry.at) > 2 * DAY) {
       return {
-        level: 'stale', reason: 'С момента записи прошло более 48 часов.',
-        action: 'Обновите показатель по графику медицинского контроля миссии.',
+        level: 'stale', reason: 'This reading is more than 48 hours old.',
+        action: 'Take a new reading per the mission monitoring schedule.',
       };
     }
     if (entry.demo === true) return assessDemo(entry);
     if (entry.metric === 'glucose' && (!entry.context || entry.context === 'unspecified')) {
       return {
-        level: 'unknown', reason: 'Не указана связь замера глюкозы с приёмом пищи.',
-        action: 'Уточните контекст, чтобы сопоставить запись с личной историей.',
+        level: 'unknown', reason: 'Meal context is missing.',
+        action: 'Add meal context to compare against personal history.',
       };
     }
     const comparison = compareHistory(entry, entries);
     if (!comparison) {
       return {
-        level: 'unknown', reason: 'Для сравнения нужны замеры минимум за три предыдущих дня в пределах последних 30 дней.',
-        action: 'Продолжайте вести журнал в сопоставимых условиях. При жалобах свяжитесь с бортовым медиком.',
+        level: 'unknown', reason: 'The baseline needs readings on at least three previous days within the last 30 days.',
+        action: 'Keep logging in comparable conditions. Contact the onboard medic if you have symptoms.',
       };
     }
     const description = comparison.map(({ label, delta }) =>
-      `${label} ${delta > 0 ? '+' : ''}${delta.toLocaleString('ru-RU')}`).join(', ');
+      `${label} ${delta > 0 ? '+' : ''}${delta.toLocaleString('en-GB')}`).join(', ');
     if (comparison.some(({ large }) => large)) {
       return {
-        level: 'watch', reason: `Заметное изменение относительно личной медианы (${description} ${metrics[entry.metric].unit}).`,
-        action: 'Проверьте условия записи и повторите замер по протоколу. Если изменение сохраняется или есть жалобы, сообщите бортовому медику.',
+        level: 'watch', reason: `Change from personal baseline (${description} ${metrics[entry.metric].unit}).`,
+        action: 'Check measurement conditions and repeat per mission procedure. Contact the onboard medic if the change persists or you have symptoms.',
       };
     }
     return {
-      level: 'ok', reason: `Небольшое изменение относительно личной медианы (${description} ${metrics[entry.metric].unit}).`,
-      action: 'Продолжайте плановые записи. При жалобах свяжитесь с бортовым медиком независимо от сравнения.',
+      level: 'ok', reason: `Small change from personal baseline (${description} ${metrics[entry.metric].unit}).`,
+      action: 'Continue scheduled readings. Contact the onboard medic if you have symptoms.',
     };
   }
 
@@ -215,7 +215,7 @@
         metric,
         at: new Date(now - (9 - day) * DAY - index * 60_000).toISOString(),
         values: metric === 'bp' ? { systolic: reading[0], diastolic: reading[1] } : { value: reading },
-        note: metric === 'sleep' && day === 9 ? 'Две паузы из-за ночной смены.' : '',
+        note: metric === 'sleep' && day === 9 ? 'Two interruptions during the night shift.' : '',
         ...(metric === 'glucose' ? { context: 'fasting' } : {}),
         demo: true,
       }))

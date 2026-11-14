@@ -30,18 +30,18 @@ test('all demo entries are valid, uniquely identified and sorted latest first', 
 test('invalid values, timestamp, extra fields and pressure ordering are rejected', () => {
   const valid = reading('bp', { systolic: 118, diastolic: 75 });
   assert.equal(validate(valid, NOW), '');
-  assert.match(validate({ ...valid, metric: 'toString' }, NOW), /показатель/);
-  assert.match(validate({ ...valid, at: '2026-02-30T12:00:00.000Z' }, NOW), /дату/);
-  assert.match(validate(reading('pulse', { value: 70 }, -1), NOW), /будущем/);
-  assert.match(validate(reading('pulse', { value: '70' }), NOW), /число/);
-  assert.match(validate(reading('temp', { value: 36.56 }), NOW), /шаг/);
+  assert.match(validate({ ...valid, metric: 'toString' }, NOW), /metric/);
+  assert.match(validate({ ...valid, at: '2026-02-30T12:00:00.000Z' }, NOW), /date/);
+  assert.match(validate(reading('pulse', { value: 70 }, -1), NOW), /future/);
+  assert.match(validate(reading('pulse', { value: '70' }), NOW), /number/);
+  assert.match(validate(reading('temp', { value: 36.56 }), NOW), /increments/);
   assert.equal(validate(reading('sleep', { value: 0 }), NOW), '');
-  assert.match(validate(reading('sleep', { value: 24.1 }), NOW), /число/);
-  assert.match(validate(reading('pulse', { value: 70, extra: 3 }), NOW), /поля/);
-  assert.match(validate(reading('bp', { systolic: 75, diastolic: 75 }), NOW), /выше/);
+  assert.match(validate(reading('sleep', { value: 24.1 }), NOW), /number/);
+  assert.match(validate(reading('pulse', { value: 70, extra: 3 }), NOW), /fields/);
+  assert.match(validate(reading('bp', { systolic: 75, diastolic: 75 }), NOW), /higher/);
   assert.match(validate({ ...valid, note: 'a'.repeat(501) }, NOW), /500/);
-  assert.match(validate({ ...valid, urgent: 'false' }, NOW), /отметку/);
-  assert.match(validate(reading('glucose', { value: 90 }, 0, { context: 'invalid' }), NOW), /условия/);
+  assert.match(validate({ ...valid, urgent: 'false' }, NOW), /flag/);
+  assert.match(validate(reading('glucose', { value: 90 }, 0, { context: 'invalid' }), NOW), /context/);
 });
 
 test('demo ranges are only used for demo measurements', () => {
