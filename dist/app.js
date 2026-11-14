@@ -356,9 +356,10 @@ function renderTrend() {
 }
 
 function renderJournal() {
+  const pageSize = 8;
   const filter = $('journal-filter').value;
   const rows = entries.filter((row) => filter === 'all' || row.metric === filter);
-  const pages = Math.max(1, Math.ceil(rows.length / 20));
+  const pages = Math.max(1, Math.ceil(rows.length / pageSize));
   page = Math.min(page, pages);
   $('export').disabled = !entries.length;
   $('export-handoff').disabled = !entries.length;
@@ -368,40 +369,61 @@ function renderJournal() {
     target.append(element('p', 'No readings match this filter.', 'empty'));
     return;
   }
-  for (const row of rows.slice((page - 1) * 20, page * 20)) {
+  const grid = element('div', undefined, 'journal-grid');
+  for (const row of rows.slice((page - 1) * pageSize, page * pageSize)) {
     const item = element('article', undefined, 'entry');
     const time = element('time', dateTime.format(new Date(row.at)), 'hint');
     time.dateTime = row.at;
     const info = element('div');
     const meta = metrics[row.metric];
-    info.append(element('h3', meta.label + ' · ' + reading(row) + ' ' + meta.unit),
-      badge(assess(row, entries, Date.parse(row.at)).level));
+    info.append(element('h3', meta.label), time);
     if (row.metric === 'glucose') info.append(element('p', contexts[row.context ?? 'unspecified'], 'hint'));
     if (row.note) {
       const note = element('p', row.note, 'hint');
       note.translate = false;
       info.append(note);
     }
-    const actions = element('div', undefined, 'card-actions');
-    actions.append(button('Edit', () => openEntry(row.metric, row)), button('Delete', () => openDelete(row)));
-    item.append(time, info, actions);
-    target.append(item);
+    const result = element('div', undefined, 'journal-result');
+    result.append(badge(assess(row, entries, Date.parse(row.at)).level),
+      element('strong', reading(row) + ' ' + meta.unit));
+    const actions = element('details', undefined, 'journal-actions');
+    actions.name = 'journal-actions';
+    const trigger = element('summary', '⋯', 'small-button');
+    trigger.setAttribute('aria-label', 'Reading actions');
+    const menu = element('div', undefined, 'journal-menu');
+    menu.append(button('Edit', () => {
+      actions.open = false;
+      trigger.focus();
+      openEntry(row.metric, row);
+    }), button('Delete', () => {
+      actions.open = false;
+      trigger.focus();
+      openDelete(row);
+    }));
+    actions.append(trigger, menu);
+    item.append(info, result, actions);
+    grid.append(item);
   }
+  target.append(grid);
   if (pages > 1) {
-    const controls = element('div', undefined, 'card-actions');
-    const prev = button('Previous', () => changePage(page - 1));
-    const next = button('Next', () => changePage(page + 1));
-    prev.disabled = page === 1;
-    next.disabled = page === pages;
-    controls.append(prev, element('span', page + ' / ' + pages, 'hint'), next);
+    const controls = element('nav', undefined, 'journal-pages');
+    controls.setAttribute('aria-label', 'Journal pages');
+    const numbers = new Set([1, page - 1, page, page + 1, pages]);
+    let previous = 0;
+    for (const index of numbers) {
+      if (index <= previous || index > pages) continue;
+      if (index > previous + 1) controls.append(element('span', '…', 'hint'));
+      const link = button(String(index), () => {
+        page = index;
+        renderJournal();
+        target.querySelector('[aria-current="page"]').focus();
+      });
+      if (index === page) link.setAttribute('aria-current', 'page');
+      controls.append(link);
+      previous = index;
+    }
     target.append(controls);
   }
-}
-
-function changePage(next) {
-  page = next;
-  renderJournal();
-  $('journal-filter').focus();
 }
 
 function drawStarField() {
@@ -829,6 +851,16 @@ $('mode').addEventListener('change', () => {
   notify(mode === 'demo' ? 'Training log opened.' : 'Personal log opened.');
 });
 $('journal-filter').addEventListener('change', () => { page = 1; renderJournal(); });
+document.addEventListener('click', (event) => {
+  const actions = $('entries').querySelector('.journal-actions[open]');
+  if (actions && !actions.contains(event.target)) actions.open = false;
+});
+$('entries').addEventListener('keydown', (event) => {
+  const actions = event.target.closest('.journal-actions[open]');
+  if (event.key !== 'Escape' || !actions) return;
+  actions.open = false;
+  actions.querySelector('summary').focus();
+});
 $('entry-metric').addEventListener('change', () => {
   $('entry-error').hidden = true;
   renderFields();

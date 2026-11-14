@@ -136,6 +136,8 @@ Add reading|Добавить измерение
 View trend|Посмотреть динамику
 Next|Далее
 Previous|Назад
+Reading actions|Действия с измерением
+Journal pages|Страницы журнала
 Blood pressure|Артериальное давление
 Systolic|Систолическое
 Diastolic|Диастолическое

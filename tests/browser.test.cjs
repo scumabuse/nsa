@@ -51,9 +51,11 @@ async function run() {
     assert.match(await id('trend').innerText(), /No readings match/);
     await page.getByRole('link', { name: 'Log', exact: true }).click();
     await visible(id('journal-title'));
-    assert.equal(await id('entries').locator('.entry').count(), 20);
-    await id('entries').getByRole('button', { name: 'Next' }).click();
-    assert.match(await id('entries').innerText(), /2 \/ 3/);
+    assert.equal(await id('entries').locator('.entry').count(), 8);
+    const firstPageDate = await id('entries').locator('time').first().getAttribute('datetime');
+    await id('entries').getByRole('button', { name: '2', exact: true }).click();
+    assert.equal(await id('entries').locator('[aria-current="page"]').innerText(), '2');
+    assert.notEqual(await id('entries').locator('time').first().getAttribute('datetime'), firstPageDate);
     await id('mode').selectOption('personal');
     assert.equal(await id('export').isDisabled(), true);
 
@@ -71,6 +73,7 @@ async function run() {
     assert.equal(await id('entries').locator('.entry').count(), 1);
     assert.equal(await id('entries').locator('img').count(), 0);
     assert.match(await id('entries').innerText(), /<img src=x/);
+    await id('entries').getByLabel('Reading actions').click();
     await id('entries').getByRole('button', { name: 'Edit' }).click();
     await page.locator('[name=value]').fill('97');
     await id('entry-urgent').check();
@@ -105,9 +108,11 @@ async function run() {
     assert.ok(handoff.indexOf('Glucose') < handoff.indexOf('Blood pressure'));
     assert.doesNotMatch(handoff, /8\.53545|RAD_RDR/);
     const glucoseEntry = id('entries').locator('.entry').filter({ hasText: 'Glucose' });
+    await glucoseEntry.getByLabel('Reading actions').click();
     await glucoseEntry.getByRole('button', { name: 'Delete' }).click();
     await id('delete-dialog').getByRole('button', { name: 'Cancel' }).click();
     assert.equal(await glucoseEntry.count(), 1);
+    await glucoseEntry.getByLabel('Reading actions').click();
     await glucoseEntry.getByRole('button', { name: 'Delete' }).click();
     await id('delete-dialog').getByRole('button', { name: 'Delete', exact: true }).click();
     assert.equal(await glucoseEntry.count(), 0);
@@ -119,7 +124,7 @@ async function run() {
     assert.equal(await id('entries').locator('.entry').count(), 1);
     await add('sleep', { value: 0 });
     await save();
-    assert.match(await id('entries').innerText(), /Sleep · 0 h/);
+    assert.match(await id('entries').locator('.entry').filter({ hasText: 'Sleep' }).innerText(), /0 h/);
     await page.getByRole('link', { name: 'Guide', exact: true }).click();
     await visible(id('guide-title'));
     assert.equal(await id('guide').locator('dt').count(), 5);
