@@ -293,9 +293,70 @@ function changePage(next) {
   $('journal-filter').focus();
 }
 
+function drawStarField() {
+  let seed = 2026;
+  const random = () => {
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+    return seed / 4294967296;
+  };
+  const stars = document.createDocumentFragment();
+  for (let index = 0; index < 310; index++) {
+    const star = document.createElement('span');
+    star.style.left = `${random() * 100}%`;
+    star.style.top = `${random() * 100}%`;
+    star.style.opacity = String(.24 + random() * .69);
+    if (index % 13 === 0) {
+      star.className = 'star-bright';
+      star.style.opacity = '.95';
+    }
+    stars.append(star);
+  }
+  $('star-field').append(stars);
+}
+
+const flightMotion = window.matchMedia('(prefers-reduced-motion: no-preference)');
+let routeAnimations = [];
+let sectorArrival;
+
+function showSector(name) {
+  document.body.dataset.sector = name;
+  window.dispatchEvent(new Event('sectorchange'));
+}
+
+function animateRoute(destination, direction) {
+  clearTimeout(sectorArrival);
+  for (const animation of routeAnimations) animation.cancel();
+  routeAnimations = [];
+  if (!flightMotion.matches || !destination.animate) {
+    showSector(destination.id);
+    return;
+  }
+
+  routeAnimations = [
+    $('space-scene').animate([
+      { transform: 'scale(1)', opacity: 1 },
+      { transform: `scale(1.35) translateX(${direction * 5}%)`, opacity: 0, offset: .34 },
+      { transform: `scale(.92) translateX(${-direction * 4}%)`, opacity: 0, offset: .43 },
+      { transform: 'scale(1)', opacity: 1 },
+    ], { duration: 820, easing: 'ease-in-out' }),
+    $('space-flight').animate([
+      { opacity: 0, transform: 'scale(.64)' },
+      { opacity: .95, transform: 'scale(1.05)', offset: .43 },
+      { opacity: 0, transform: 'scale(2.2)' },
+    ], { duration: 820, easing: 'ease-in-out' }),
+    destination.animate([
+      { opacity: 0, transform: 'translateY(12px) scale(.985)' },
+      { opacity: 0, offset: .36 },
+      { opacity: 1, transform: 'none' },
+    ], { duration: 820 }),
+  ];
+  sectorArrival = setTimeout(() => showSector(destination.id), 350);
+}
+
 function route(focus = false) {
   const name = location.hash.slice(1);
   if (name === 'main') return;
+  const previous = section;
   section = routes.includes(name) ? name : 'overview';
   for (const id of routes) $(id).hidden = id !== section;
   for (const link of document.querySelectorAll('nav a')) {
@@ -303,11 +364,15 @@ function route(focus = false) {
     else link.removeAttribute('aria-current');
   }
   render();
+  if (!focus) showSector(section);
   if (focus) {
     window.scrollTo(0, 0);
     const heading = $(section).querySelector('h1');
     heading.tabIndex = -1;
     heading.focus({ preventScroll: true });
+    if (section !== previous) {
+      animateRoute($(section), Math.sign(routes.indexOf(section) - routes.indexOf(previous)));
+    }
   }
 }
 
@@ -493,6 +558,7 @@ try {
 }
 $('mode').value = mode;
 reloadJournal();
+drawStarField();
 route();
 window.addEventListener('hashchange', () => route(true));
 window.addEventListener('storage', (event) => {

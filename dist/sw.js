@@ -1,13 +1,16 @@
 'use strict';
 
-const cacheName = 'orbit-health-shell-v3';
-const shell = ['./index.html', './styles.css', './model.js', './rad-data.js', './app.js', './bodymap.js', './bodymap.css', './checkin.js'];
+const cacheName = 'orbit-health-shell-v15';
+const shell = ['./index.html', './styles.css', './model.js', './rad-data.js', './app.js', './bodymap.js', './bodymap.css', './checkin.js', './space-models.js'];
+for (const name of ['earth_daymap', 'earth_clouds', 'saturn', 'moon']) {
+  shell.push('./planet-maps/' + name + '.jpg');
+}
 const assetUrls = new Set(shell.map((path) => new URL(path, self.registration.scope).href));
 const entryUrl = new URL('./index.html', self.registration.scope).href;
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(cacheName).then((cache) =>
-    cache.addAll(shell.map((path) => new Request(path, { cache: 'reload' })))));
+    cache.addAll(shell.map((path) => new Request(path, { cache: 'reload' })))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (event) => {

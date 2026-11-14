@@ -22,52 +22,107 @@
   ].map(d => '<path d="' + d + '"/>').join('');
   const abs = [172,190,208].map(y => '<rect x="138" y="' + y + '" width="10" height="15" rx="4"/><rect x="152" y="' + y + '" width="10" height="15" rx="4"/>').join('');
   const ribs = [133,145,157,169,181].map((y,i) => '<path d="M148 ' + y + ' Q' + (110+i*2) + ' ' + (y-15) + ' 118 ' + (y+5) + ' Q130 ' + (y+15) + ' 148 ' + (y+7) + ' M152 ' + y + ' Q' + (190-i*2) + ' ' + (y-15) + ' 182 ' + (y+5) + ' Q170 ' + (y+15) + ' 152 ' + (y+7) + '"/>').join('');
+  const zones = [
+    ['head', 'Head', 'M100 12 H200 V82 H100Z', 'Review sleep and mood, and record any symptoms such as headaches.', ['sleep', 'mood']],
+    ['neck', 'Neck', 'M128 82 H172 L178 101 L150 115 L122 101Z', 'Record neck discomfort or stiffness.'],
+    ['chest', 'Chest', 'M122 101 L150 115 L178 101 L188 150 L184 176 H116 L112 150Z', 'Review resting heart rate and blood pressure.', ['pulse', 'bp']],
+    ['abdomen', 'Abdomen', 'M116 176 H184 L193 228 H107Z', 'Review glucose readings taken in comparable meal contexts and record any digestive symptoms.', ['glucose']],
+    ['pelvis', 'Pelvis', 'M107 228 H193 V264 L150 289 L107 264Z', 'Record discomfort or changes in mobility.'],
+  ];
+  const limbs = [
+    ['upper-arm', 'upper arm', 'M90 96 H122 L112 150 L101 184 L78 177Z'],
+    ['forearm', 'forearm', 'M78 177 L101 184 L79 248 L51 242Z'],
+    ['hand', 'hand', 'M51 242 L79 248 L79 284 H43Z'],
+    ['thigh', 'thigh', 'M102 261 L150 289 L146 346 H115Z'],
+    ['lower-leg', 'lower leg', 'M115 346 H146 L144 424 H111Z'],
+    ['foot', 'foot', 'M111 424 H144 V458 H97Z'],
+  ];
+  const regions = zones.map(([id, title, shape]) => region(id, title, shape));
+  for (const [id, label, shape] of limbs) {
+    for (const side of ['right', 'left']) {
+      const name = side + '-' + id;
+      const title = side[0].toUpperCase() + side.slice(1) + ' ' + label;
+      zones.push([name, title, shape, 'Record any discomfort, stiffness or change in movement in this area.']);
+      regions.push(region(name, title, shape, side === 'left' ? 'translate(300 0) scale(-1 1)' : ''));
+    }
+  }
+
+  function region(id, title, shape, transform = '') {
+    return '<path class="body-region" data-zone="' + id + '" d="' + shape + '" transform="' + transform +
+      '" role="button" tabindex="0" aria-label="' + title + '" aria-pressed="false"><title>' + title + '</title></path>';
+  }
+
   panel.innerHTML = `
-    <div class="body-heading"><div><p class="eyebrow">Explore your health</p><h2 id="body-title">Body map</h2></div><span id="body-layer-label" class="status">Skin</span></div>
+    <div class="body-heading"><h2 id="body-title">Body map</h2><span id="body-preview" class="body-preview" aria-hidden="true"></span></div>
     <div class="body-layout">
       <div class="body-view" id="body-view" aria-label="Interactive body illustration">
-        <svg viewBox="0 0 300 480" role="img" aria-label="Human body with skin, muscle and bone layers">
-          <defs><linearGradient id="body-skin" x1="0" x2="1"><stop stop-color="#618da9"/><stop offset=".48" stop-color="#b6d4dc"/><stop offset="1" stop-color="#527c98"/></linearGradient><linearGradient id="body-muscle" x1="0" x2="1"><stop stop-color="#80536a"/><stop offset=".5" stop-color="#e6a499"/><stop offset="1" stop-color="#9e6476"/></linearGradient></defs>
+        <svg viewBox="0 0 300 480" role="group" aria-label="Interactive anatomical zones">
+          <defs><clipPath id="body-outline"><path d="${outline}"/></clipPath><linearGradient id="body-muscle"><stop stop-color="#1a4167"/><stop offset=".5" stop-color="#448aa8"/><stop offset="1" stop-color="#283962"/></linearGradient></defs>
           <g class="body-anatomy" id="body-anatomy">
-            <path d="${outline}" fill="#172d40" stroke="#6e96a8" stroke-width="1.3"/>
-            <g class="anatomy-layer" data-anatomy="skin"><path d="${outline}" fill="url(#body-skin)" stroke="#bfd9e5"/><path d="M150 102 L150 230 M117 144 Q132 152 146 147 M154 147 Q168 152 183 144 M126 252 Q150 266 174 252 M134 57 Q140 60 145 57 M155 57 Q160 60 166 57 M144 71 Q150 74 156 71" fill="none" stroke="#406880" stroke-width="1.5" opacity=".55"/></g>
-            <g class="anatomy-layer" data-anatomy="muscles" style="opacity:0" fill="url(#body-muscle)" stroke="#f0bcb1" stroke-width=".8">${muscles}${abs}<ellipse cx="150" cy="53" rx="22" ry="29"/><path d="M142 228 L158 228 L150 252Z"/></g>
-            <g class="anatomy-layer bones" data-anatomy="bones" style="opacity:0"><path d="M132 77 Q122 53 131 37 Q150 22 169 37 Q178 53 168 77 L161 83 L139 83Z" fill="#d2dce1"/><ellipse cx="140" cy="55" rx="6" ry="7" fill="#294256"/><ellipse cx="160" cy="55" rx="6" ry="7" fill="#294256"/><path d="M150 86 L150 242 M111 119 Q128 107 150 119 Q172 107 189 119 M106 130 L87 198 M83 209 L63 258 M194 130 L213 198 M217 209 L237 258 M125 280 L132 348 M168 348 L175 280 M130 363 L128 428 M170 363 L172 428" stroke-width="7"/><g stroke-width="3.5">${ribs}</g><path d="M150 242 Q123 222 113 245 L119 271 L137 285 L150 266 L163 285 L181 271 L187 245 Q177 222 150 242Z" stroke-width="5"/><path d="M127 436 L115 444 M173 436 L185 444" stroke-width="8"/></g>
+            <path d="${outline}" fill="#0a293b" stroke="#62d7ed" stroke-width="1.3"/>
+            <g class="anatomy-layer" data-anatomy="muscles" fill="url(#body-muscle)" stroke="#69aeca" stroke-width=".8">${muscles}${abs}<ellipse cx="150" cy="53" rx="22" ry="29"/><path d="M142 228 L158 228 L150 252Z"/></g>
+            <g class="anatomy-layer bones" data-anatomy="bones"><path d="M132 77 Q122 53 131 37 Q150 22 169 37 Q178 53 168 77 L161 83 L139 83Z" fill="#3a94b6"/><ellipse cx="140" cy="55" rx="6" ry="7" fill="#08283e"/><ellipse cx="160" cy="55" rx="6" ry="7" fill="#08283e"/><path d="M150 86 L150 242 M111 119 Q128 107 150 119 Q172 107 189 119 M106 130 L87 198 M83 209 L63 258 M194 130 L213 198 M217 209 L237 258 M125 280 L132 348 M168 348 L175 280 M130 363 L128 428 M170 363 L172 428" stroke-width="7"/><g stroke-width="3.5">${ribs}</g><g stroke-width="1.3">${Array.from({ length: 19 }, (_, i) => `<rect x="145" y="${88 + i * 8}" width="10" height="6" rx="2"/>`).join('')}</g><path d="M150 242 Q123 222 113 245 L119 271 L137 285 L150 266 L163 285 L181 271 L187 245 Q177 222 150 242Z" stroke-width="5"/><path d="M127 436 L115 444 M173 436 L185 444" stroke-width="8"/></g>
+            <g class="body-face" pointer-events="none" stroke-linecap="round" stroke-linejoin="round">
+              <defs>
+                <linearGradient id="face-tissue" x2=".84" y2=".35">
+                  <stop stop-color="#3a8498"/><stop offset=".43" stop-color="#86bfc9"/>
+                  <stop offset=".72" stop-color="#4d899f"/><stop offset="1" stop-color="#23475c"/>
+                </linearGradient>
+              </defs>
+              <path d="M128 48 Q122 44 123 55 Q124 62 130 62 M172 48 Q178 44 177 55 Q176 62 170 62" fill="#43859a" stroke="#7ac5d2"/>
+              <path d="M150 25 C135 25 128 34 128 46 L130 61 Q132 72 140 78 Q150 84 160 78 Q168 72 170 61 L172 46 C172 34 165 25 150 25Z" fill="url(#face-tissue)" stroke="#96deea"/>
+              <path d="M150 27 Q142 33 143 43 M150 27 Q158 33 157 43 M133 46 Q139 41 146 46 M154 46 Q161 41 167 46" fill="none" stroke="#c6f0ee" stroke-width="1.2"/>
+              <path d="M131 56 Q141 56 146 64 Q139 63 136 70Z M169 56 Q159 56 154 64 Q161 63 164 70Z" fill="#377187" stroke="#a0d9de" stroke-width=".7"/>
+              <path d="M134 51 Q139 47 145 51 Q140 55 134 51Z M155 51 Q161 47 166 51 Q161 55 155 51Z" fill="#d8f1ed" stroke="#214b61" stroke-width="1.2"/>
+              <path d="M140 50 v2 M160 50 v2" stroke="#163d52" stroke-width="2.2"/>
+              <path d="M148 48 Q148 54 145 59 Q149 62 155 59 L152 50" fill="#77aebc" stroke="#325d73" stroke-width="1"/>
+              <path d="M142 68 Q147 64 150 67 Q153 64 158 68 Q151 74 142 68Z" fill="#43738a" stroke="#b8e1e1" stroke-width=".8"/>
+              <path d="M144 68 Q150 70 156 68 M145 75 Q150 77 155 75" fill="none" stroke="#294f65" stroke-width="1"/>
+              <path d="M132 58 L140 64 M134 63 L141 69 M168 58 L160 64 M166 63 L159 69 M140 78 L145 94 M160 78 L155 94" fill="none" stroke="#8ac5d3" stroke-width=".75"/>
+              <g class="face-cutaway">
+                <path d="M150 25 C165 25 172 34 172 46 L170 61 Q168 72 160 78 Q155 81 150 81Z" fill="#8fa9af" stroke="#d2e4df" stroke-width=".8"/>
+                <path d="M151 28 Q163 26 168 37 Q170 40 169 44 L151 43Z" fill="#b78085" stroke="#ead0bb" stroke-width="1.1"/>
+                <path d="M154 30 Q158 29 158 33 T162 35 Q166 36 164 40 M153 35 Q155 33 157 37 T160 41 M161 31 Q164 31 165 35 M153 39 Q154 37 157 41 M166 38 Q169 40 167 43" fill="none" stroke="#704e65" stroke-width=".75"/>
+                <path d="M154 48 Q160 45 167 48 L165 55 Q161 60 156 56Z M151 54 Q155 58 156 62 L151 63Z" fill="#233d50" stroke="#cae0dc" stroke-width=".8"/>
+                <path d="M153 65 Q160 65 167 60 L163 67 Q159 70 153 70Z" fill="#dae7de" stroke="#587986" stroke-width=".65"/>
+                <path d="M156 65 v4 M159 64 l1 4 M163 63 l1 3 M153 67 Q159 67 165 64 M152 75 Q159 76 164 70" fill="none" stroke="#587986" stroke-width=".65"/>
+                <path d="M150 26 V80" stroke="#e6bd99" stroke-width=".8"/>
+              </g>
+            </g>
+            <g clip-path="url(#body-outline)">${regions.join('')}</g>
           </g>
         </svg>
-        <button class="body-hotspot body-head" data-zone="recovery" aria-label="Sleep and mood">＋</button>
-        <button class="body-hotspot body-heart" data-zone="heart" aria-label="Heart and circulation">＋</button>
-        <button class="body-hotspot body-leg" data-zone="movement" aria-label="Muscles and bones">＋</button>
       </div>
       <div class="body-details">
-        <div class="body-zones" role="group" aria-label="Body systems"><button data-zone="heart">Heart & circulation</button><button data-zone="movement">Muscles & bones</button><button data-zone="recovery">Sleep & mood</button></div>
-        <h3 id="body-zone-title"></h3><p id="body-zone-description" class="muted"></p>
+        <label class="body-picker">Body area
+          <select id="body-zone-picker">${zones.map(([id, title]) => '<option value="' + id + '">' + title + '</option>').join('')}</select>
+        </label>
+        <div aria-live="polite"><h3 id="body-zone-title"></h3><p id="body-zone-description" class="muted"></p></div>
         <div id="body-zone-actions" class="card-actions"></div>
-        <div class="body-zoom"><label for="body-zoom">Explore anatomy</label><div><button id="body-zoom-out" aria-label="Zoom out">−</button><input id="body-zoom" type="range" min="0" max="100" value="0" step="1" aria-label="Anatomy zoom"><button id="body-zoom-in" aria-label="Zoom in">＋</button></div><div class="body-layer-buttons"><button data-layer="0">Skin</button><button data-layer="50">Muscles</button><button data-layer="100">Bones</button></div><p class="hint">Zoom into the body to reveal the next layer.</p></div>
+        <div class="body-zoom"><label for="body-zoom">Zoom</label><div><button id="body-zoom-out" aria-label="Zoom out">−</button><input id="body-zoom" type="range" min="0" max="100" value="0" step="1" aria-label="Anatomy zoom"><button id="body-zoom-in" aria-label="Zoom in">＋</button></div></div>
       </div>
     </div>`;
-  document.querySelector('#overview .hero').after(panel);
+  document.querySelector('#metrics').closest('section').after(panel);
   const slider = panel.querySelector('#body-zoom');
-  const systems = {
-    heart: { title: 'Heart & circulation', description: 'Review resting heart rate and blood pressure. Compare measurements taken in similar conditions and note recent activity.', metrics: ['pulse', 'bp'] },
-    movement: { title: 'Muscles & bones', description: 'Record discomfort, stiffness or recent exercise during your check-in. Muscle strength and bone density need dedicated tests under the mission protocol.', metrics: [] },
-    recovery: { title: 'Sleep & mood', description: 'Review sleep duration and daily mood together. Note interrupted sleep, schedule changes and how you feel.', metrics: ['sleep', 'mood'] },
-  };
+  const picker = panel.querySelector('#body-zone-picker');
+  const regionButtons = [...panel.querySelectorAll('[data-zone]')];
+
   function selectZone(name) {
-    const system = systems[name];
-    panel.querySelector('#body-zone-title').textContent = system.title;
-    panel.querySelector('#body-zone-description').textContent = system.description;
-    panel.querySelectorAll('[data-zone]').forEach(node => node.setAttribute('aria-pressed', String(node.dataset.zone === name)));
+    const [, title, , description, readings = []] = zones.find(([id]) => id === name);
+    picker.value = name;
+    panel.querySelector('#body-zone-title').textContent = title;
+    panel.querySelector('#body-zone-description').textContent = description;
+    regionButtons.forEach(node => node.setAttribute('aria-pressed', String(node.dataset.zone === name)));
     const actions = panel.querySelector('#body-zone-actions');
     actions.replaceChildren();
-    if (name === 'movement') {
+    if (!readings.length) {
       const checkin = document.createElement('button');
       checkin.className = 'secondary';
       checkin.textContent = 'Record symptoms';
       checkin.addEventListener('click', () => document.querySelector('[data-checkin]').click());
       actions.append(checkin);
     }
-    for (const metric of system.metrics) {
+    for (const metric of readings) {
       const trigger = document.createElement('button');
       trigger.className = 'secondary';
       trigger.textContent = metrics[metric].label + ' trend';
@@ -78,27 +133,33 @@
   function setZoom(value) {
     const zoom = Math.max(0, Math.min(100, value));
     slider.value = zoom;
-    const skin = Math.max(0, 1 - zoom / 50);
-    const bones = Math.max(0, (zoom - 50) / 50);
-    const muscle = 1 - skin - bones;
-    panel.querySelector('[data-anatomy="skin"]').style.opacity = skin;
-    panel.querySelector('[data-anatomy="muscles"]').style.opacity = muscle;
-    panel.querySelector('[data-anatomy="bones"]').style.opacity = bones;
-    panel.querySelector('#body-layer-label').textContent = zoom < 25 ? 'Skin' : zoom < 75 ? 'Muscles' : 'Bones';
     panel.querySelector('#body-anatomy').style.transform = 'scale(' + (1 + zoom * .001) + ')';
-    panel.querySelectorAll('[data-layer]').forEach(node => node.setAttribute('aria-pressed', String(Number(node.dataset.layer) === (zoom < 25 ? 0 : zoom < 75 ? 50 : 100))));
     panel.querySelector('#body-zoom-out').disabled = zoom === 0;
     panel.querySelector('#body-zoom-in').disabled = zoom === 100;
   }
-  panel.querySelectorAll('[data-zone]').forEach(node => node.addEventListener('click', () => selectZone(node.dataset.zone)));
-  panel.querySelectorAll('[data-layer]').forEach(node => node.addEventListener('click', () => setZoom(Number(node.dataset.layer))));
+  picker.addEventListener('change', () => selectZone(picker.value));
+  const preview = panel.querySelector('#body-preview');
+  for (const region of regionButtons) {
+    region.addEventListener('pointerenter', () => {
+      region.setAttribute('data-preview', '');
+      preview.textContent = region.getAttribute('aria-label');
+    });
+    region.addEventListener('pointerleave', () => {
+      region.removeAttribute('data-preview');
+      preview.textContent = '';
+    });
+    const activate = () => selectZone(region.dataset.zone);
+    region.addEventListener('click', activate);
+    region.addEventListener('keydown', event => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        activate();
+      }
+    });
+  }
   slider.addEventListener('input', () => setZoom(Number(slider.value)));
   panel.querySelector('#body-zoom-out').addEventListener('click', () => setZoom(Number(slider.value) - 25));
   panel.querySelector('#body-zoom-in').addEventListener('click', () => setZoom(Number(slider.value) + 25));
-  panel.querySelector('#body-view').addEventListener('wheel', event => {
-    event.preventDefault();
-    setZoom(Number(slider.value) - Math.sign(event.deltaY) * 8);
-  }, { passive: false });
-  selectZone('heart');
+  selectZone('chest');
   setZoom(0);
 })();

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#10172b">
+  <meta name="theme-color" content="#070d19">
   <meta name="description" content="An offline crew health log for long-duration space missions.">
   <title>Orbit Health — Crew health monitoring</title>
   <link rel="stylesheet" href="./styles.css">
@@ -13,8 +13,19 @@
   <script defer src="./app.js"></script>
   <script defer src="./bodymap.js"></script>
   <script defer src="./checkin.js"></script>
+  <script defer src="./space-models.js"></script>
 </head>
 <body>
+  <div class="space-backdrop" aria-hidden="true">
+    <div class="star-field" id="star-field"></div>
+    <div class="space-nebula"></div>
+  </div>
+  <div class="space-viewport" aria-hidden="true">
+    <div class="space-scene" id="space-scene">
+      <canvas id="space-models" class="space-models"></canvas>
+    </div>
+  </div>
+  <div class="space-flight" aria-hidden="true"><div class="space-streaks" id="space-flight"></div></div>
   <a class="skip" href="#main">Skip to content</a>
   <header class="topbar">
     <div class="wrap header-row">
@@ -122,7 +133,7 @@
         <p>Training uses synthetic crew readings. The personal log compares recent measurements with your own history. If a reading changes, check the conditions, log the context and follow the mission medical protocol. Report serious symptoms to the onboard medic immediately.</p>
       </article>
     </section>
-    <footer><span>NASA Space Apps Challenge 2026 · Hackathon prototype</span><span id="offline">Data stored in this browser</span></footer>
+    <footer><span>NASA Space Apps Challenge 2026 · Hackathon prototype</span><span>Planet maps by <a href="https://play.solarsystemscope.com/textures/">Solar System Scope</a> · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></span><span id="offline">Data stored in this browser</span></footer>
   </main>
   <dialog id="entry-dialog" aria-labelledby="entry-title">
     <form id="entry-form">
