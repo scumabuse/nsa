@@ -1,6 +1,6 @@
 'use strict';
 
-const cacheName = 'orbit-health-shell-v15';
+const cacheName = 'orbit-health-shell-v25';
 const shell = ['./index.html', './styles.css', './model.js', './rad-data.js', './app.js', './bodymap.js', './bodymap.css', './checkin.js', './space-models.js'];
 for (const name of ['earth_daymap', 'earth_clouds', 'saturn', 'moon']) {
   shell.push('./planet-maps/' + name + '.jpg');

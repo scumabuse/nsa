@@ -302,12 +302,14 @@ function drawStarField() {
   const stars = document.createDocumentFragment();
   for (let index = 0; index < 310; index++) {
     const star = document.createElement('span');
-    star.style.left = `${random() * 100}%`;
+    const x = random();
+    star.style.left = `${x * 100}%`;
     star.style.top = `${random() * 100}%`;
-    star.style.opacity = String(.24 + random() * .69);
-    if (index % 13 === 0) {
+    const edge = x < .22 || x > .78;
+    star.style.opacity = String((.2 + random() * .65) * (edge ? 1 : .55));
+    if (edge && index % 9 === 0) {
       star.className = 'star-bright';
-      star.style.opacity = '.95';
+      star.style.opacity = '.85';
     }
     stars.append(star);
   }
@@ -331,6 +333,26 @@ function animateRoute(destination, direction) {
     showSector(destination.id);
     return;
   }
+  const approachFrom = { journal: 'overview', radiation: 'journal', guide: 'radiation' };
+  if (approachFrom[destination.id] === document.body.dataset.sector) {
+    const duration = 1150;
+    window.dispatchEvent(new CustomEvent('sectorapproach', { detail: { destination: destination.id, duration } }));
+    routeAnimations = [
+      $('space-flight').animate([
+        { opacity: 0, transform: 'scale(.65)' },
+        { opacity: .56, transform: 'scale(1.1)', offset: .48 },
+        { opacity: 0, transform: 'scale(2)' },
+      ], { duration, easing: 'ease-in-out' }),
+      destination.animate([
+        { opacity: 0, transform: 'translateY(12px)' },
+        { opacity: 0, transform: 'translateY(12px)', offset: .64 },
+        { opacity: 1, transform: 'none' },
+      ], { duration }),
+    ];
+    sectorArrival = setTimeout(() => showSector(destination.id), duration);
+    return;
+  }
+  window.dispatchEvent(new Event('cancelsectorapproach'));
 
   routeAnimations = [
     $('space-scene').animate([

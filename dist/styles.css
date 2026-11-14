@@ -39,7 +39,10 @@ body { isolation: isolate; }
 }
 .star-field { position: absolute; inset: 0; }
 body[data-sector="journal"] .space-backdrop {
-  background: radial-gradient(ellipse 52% 34rem at 2% 19rem, #251237, transparent), var(--bg);
+  background:
+    radial-gradient(ellipse 74% 44rem at 32% 23rem, #26313e, transparent),
+    radial-gradient(ellipse 67% 76% at 24% 52%, #121d29, transparent),
+    linear-gradient(115deg, #0e1722, var(--bg) 75%);
 }
 body[data-sector="radiation"] .space-backdrop {
   background: radial-gradient(ellipse 55% 38rem at 100% 18rem, #301510, transparent), var(--bg);
@@ -49,10 +52,17 @@ body[data-sector="guide"] .space-backdrop {
 }
 .space-nebula {
   position: absolute;
-  inset: 92vh 0 0;
-  background: radial-gradient(ellipse 24rem 17rem at 100% 20vh, #40215a45, transparent),
-    radial-gradient(ellipse 19rem 13rem at 0 58vh, #174b6642, transparent);
+  inset: 0;
+  --dust: #4d6ba63b;
+  --dust-edge: #60488926;
+  background: radial-gradient(ellipse 30rem 9rem at 85% 53vh, var(--dust), transparent 72%),
+    radial-gradient(ellipse 24rem 14rem at 98% 75vh, var(--dust-edge), transparent 76%),
+    radial-gradient(ellipse 24rem 17rem at 100% 112vh, #40215a45, transparent),
+    radial-gradient(ellipse 19rem 13rem at 0 150vh, #174b6642, transparent);
 }
+body[data-sector="journal"] .space-nebula { --dust: #859aab32; --dust-edge: #53677929; }
+body[data-sector="radiation"] .space-nebula { --dust: #9f503b34; --dust-edge: #7f37622b; }
+body[data-sector="guide"] .space-nebula { --dust: #367a833c; --dust-edge: #3d528d2b; }
 .star-field span {
   position: absolute;
   width: 1px;
@@ -66,7 +76,43 @@ body[data-sector="guide"] .space-backdrop {
   background: #fff;
   box-shadow: 0 0 5px 2px #a6ceffb3, 0 0 15px 4px #4389ff63;
 }
-.space-models { position: absolute; inset: 0; width: 100%; height: 100%; }
+.space-models {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: .72;
+  mask-image: radial-gradient(ellipse at var(--scene-light, 72% 43%), #000b, #000 68%);
+}
+.measurement-panel { display: flex; flex-direction: column; }
+#death-star-space { flex: 1; min-height: 13rem; }
+main > section {
+  --border: var(--scene-line, #a3bed14d);
+  --muted: #cbd6e3;
+  text-shadow: 0 1px 4px #010307, 0 0 12px #010307;
+}
+body[data-sector="journal"] { --scene-light: 34% 43%; }
+body[data-sector="radiation"] { --scene-light: 73% 41%; --scene-line: #dfad974d; }
+body[data-sector="guide"] { --scene-light: 66% 40%; --scene-line: #98d2d34d; }
+main .page-head { margin-block: clamp(2rem, 5vw, 4.5rem) 1.5rem; }
+main :is(.page-head, .hero) p { color: var(--muted); }
+#journal .entry { padding-block: .9rem; }
+#journal .entry:hover { background: linear-gradient(90deg, #c7ddf012, transparent); }
+main > section :is(.secondary, .small-button, select, .body-layer-buttons button) {
+  background: #0b1425b8;
+  border-color: var(--border);
+}
+main > section :is(.secondary, .small-button, select):hover {
+  background: #25384edb;
+}
+body[data-sector="journal"] .space-nebula {
+  background: radial-gradient(ellipse 22rem 9rem at 15% 62vh, #516d8d38, transparent),
+    radial-gradient(ellipse 32rem 7rem at 92% 22vh, #97adc030, transparent),
+    radial-gradient(ellipse 26rem 15rem at 82% 117vh, #34496653, transparent);
+}
+@media (max-width: 640px) {
+  .space-models { opacity: .41; }
+}
 .space-flight { z-index: 3; }
 .space-streaks {
   position: absolute;
