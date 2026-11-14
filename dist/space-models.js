@@ -190,7 +190,10 @@
 
     void renderPlanet() {
       vec2 plane = uv * 1.12;
-      if (model == 3) plane *= 1.77;
+      if (model == 3) {
+        vec2 equator = rotation(.30) * uv * 2.52;
+        plane = rotation(-.30) * vec2(equator.x, equator.y / .91);
+      }
       float radius = length(plane);
       if (model == 1) {
         renderMars(plane, radius);
@@ -199,13 +202,24 @@
       vec3 atmosphere = model == 0 ? vec3(.25, .55, 1.) : vec3(0.);
       if (model == 3) {
         atmosphere = vec3(.78, .63, .39);
-        vec2 ring = rotation(.32) * plane;
-        float orbit = length(ring / vec2(1., .31));
-        if (orbit > 1.16 && orbit < 1.72 && (radius > 1. || ring.y < 0.)) {
-          float dust = .66 + .12 * sin(orbit * 105.) + .08 * sin(orbit * 239.);
-          float gap = smoothstep(.012, .027, abs(orbit - 1.53));
-          float shadow = 1. - .45 * smoothstep(.03, .24, ring.x) * (1. - smoothstep(.27, .52, abs(ring.y)));
-          gl_FragColor = vec4(vec3(.88, .78, .63) * shadow, dust * gap);
+        vec2 ring = rotation(.30) * plane * vec2(1., .91);
+        const float opening = .43;
+        float orbit = length(ring / vec2(1., opening));
+        if (orbit > 1.24 && orbit < 2.28 && (radius > 1. || ring.y < 0.)) {
+          float cRing = .29 * (1. - smoothstep(1.51, 1.54, orbit));
+          float bRing = .94 * smoothstep(1.49, 1.54, orbit) * (1. - smoothstep(1.94, 1.96, orbit));
+          float aRing = .70 * smoothstep(2.01, 2.035, orbit);
+          float encke = smoothstep(.003, .010, abs(orbit - 2.214));
+          float bands = .86 + .09 * sin(orbit * 109.) + .04 * sin(orbit * 243.);
+          float opacity = (cRing + bRing + aRing * encke) * bands;
+          opacity *= smoothstep(1.24, 1.27, orbit) * (1. - smoothstep(2.25, 2.28, orbit));
+          vec3 ringPoint = vec3(ring, -ring.y * sqrt(1. - opening * opening) / opening);
+          vec3 sun = normalize(vec3(rotation(.30) * light.xy, light.z));
+          float projection = dot(ringPoint, sun);
+          float miss = length(ringPoint - sun * projection);
+          float sunlight = projection < 0. ? mix(.16, 1., smoothstep(.96, 1.04, miss)) : 1.;
+          vec3 grains = mix(vec3(.68, .59, .50), vec3(.94, .86, .73), clamp(bRing + .35 * aRing, 0., 1.));
+          gl_FragColor = vec4(grains * sunlight, opacity);
           return;
         }
       }
@@ -552,8 +566,13 @@
       const closeMars = [1, width * (compact ? .92 : .77), height * .41, Math.min(width * .72, 640)];
       const distantRelay = [2, width * .15, height * .26, compact ? 46 : 82];
       const closeRelay = [2, width * (compact ? .83 : .79), height * .33, Math.min(width * .65, 460)];
+      const metricBounds = document.getElementById('metrics').getBoundingClientRect();
+      const overviewMetricsY = metricBounds.height
+        ? window.scrollY + metricBounds.top + Math.min(metricBounds.height * .44, 310)
+        : height * 1.05;
       const overview = [
-        [0, width * (compact ? .94 : .81), height * .32, Math.min(width * .31, 340)],
+        [3, width * .79, height * (compact ? .19 : .31), Math.min(width * (compact ? .53 : .40), 570)],
+        [0, width * (compact ? .62 : .27), overviewMetricsY, Math.min(width * (compact ? 1.38 : .69), 900)],
         [2, width * .61, height * .18, compact ? 56 : 106],
         distantMoon,
         [2, width * .79, height * 1.22, compact ? 74 : 125],

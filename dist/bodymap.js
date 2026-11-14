@@ -233,9 +233,6 @@
           <button class="secondary" data-anatomy-mode="overview">Overview</button>
           <button class="secondary" data-anatomy-mode="organs">Organs</button>
           <button class="secondary" data-anatomy-mode="bones">Skeleton</button>
-          <button class="secondary" data-anatomy-mode="hands">Hands</button>
-          <button class="secondary" data-anatomy-mode="feet">Feet</button>
-          <button class="secondary" data-anatomy-mode="nerves">Leg nerves</button>
         </div>
         <p id="anatomy-drag-hint" class="hint" hidden>Drag to rotate. Use the arrows when the model has focus.</p>
         <label class="body-picker">Body area
@@ -281,6 +278,7 @@
     panel.querySelector('#body-zone-description').textContent = description;
     regionButtons.forEach(node => node.setAttribute('aria-pressed', String(node.dataset.zone === name)));
     const actions = panel.querySelector('#body-zone-actions');
+    actions.dataset.zone = name;
     actions.replaceChildren();
     if (!readings.length) {
       const checkin = document.createElement('button');
@@ -296,7 +294,17 @@
       trigger.addEventListener('click', () => showTrend(metric));
       actions.append(trigger);
     }
+    const symptomDetails = element('div', undefined, 'zone-symptoms');
+    actions.append(symptomDetails);
+    window.OrbitMission?.zoneDetails(symptomDetails, name, title);
   }
+  window.addEventListener('orbit-update', () => {
+    const marked = window.OrbitMission?.markedZones() || new Set();
+    for (const region of regionButtons) region.toggleAttribute('data-symptom', marked.has(region.dataset.zone));
+    viewer?.mark(marked);
+    const name = panel.querySelector('#body-zone-actions').dataset.zone;
+    if (name) selectZone(name);
+  });
   function setZoom(value) {
     const zoom = Math.max(0, Math.min(100, value));
     slider.value = zoom;
@@ -343,6 +351,7 @@
       });
       viewer.view(currentView);
       viewer.select(picker.value);
+      viewer.mark(window.OrbitMission?.markedZones() || new Set());
       viewer.zoom(Number(slider.value));
       svg.hidden = true;
       svg.setAttribute('hidden', '');

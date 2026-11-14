@@ -1,7 +1,8 @@
 'use strict';
 
-const cacheName = 'orbit-health-shell-v51';
+const cacheName = 'orbit-health-shell-v60';
 const shell = ['./index.html', './styles.css', './model.js', './rad-data.js', './app.js', './bodymap.js', './bodymap.css', './checkin.js', './space-models.js'];
+shell.push('./mission-history.js');
 shell.push('./anatomy-3d.js', './vendor/three.module.min.js', './vendor/three.core.min.js', './vendor/SVGLoader.js');
 shell.push('./vendor/GLTFLoader.js', './vendor/DRACOLoader.js', './vendor/utils/BufferGeometryUtils.js',
   './vendor/utils/SkeletonUtils.js', './vendor/draco/gltf/draco_decoder.wasm', './vendor/draco/gltf/draco_wasm_wrapper.js',

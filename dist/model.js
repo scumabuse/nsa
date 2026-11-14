@@ -98,7 +98,7 @@
     return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
   }
 
-  function compareHistory(entry, entries) {
+  function comparisonDays(entry, entries) {
     const at = Date.parse(entry.at);
     const daily = new Map();
     for (const earlier of entries) {
@@ -113,11 +113,16 @@
       if (!daily.has(date)) daily.set(date, []);
       daily.get(date).push(earlier.values);
     }
+    return daily;
+  }
+
+  function compareHistory(entry, entries) {
+    const daily = comparisonDays(entry, entries);
     if (daily.size < 3) return null;
     return metrics[entry.metric].fields.map(({ key, label }) => {
       const baseline = median([...daily.values()].map(values => median(values.map(value => value[key]))));
       const delta = Math.round((entry.values[key] - baseline) * 100) / 100;
-      return { label, delta, large: Math.abs(delta) >= trendThresholds[entry.metric][key] };
+      return { label, baseline, delta, large: Math.abs(delta) >= trendThresholds[entry.metric][key] };
     });
   }
 
@@ -222,7 +227,7 @@
     ).sort((a, b) => b.at.localeCompare(a.at));
   }
 
-  const api = { metrics, validate, assess, demoEntries };
+  const api = { metrics, validate, assess, demoEntries, comparisonDays, compareHistory };
   if (typeof module === 'object' && module.exports) {
     module.exports = api;
   } else {

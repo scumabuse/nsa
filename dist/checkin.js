@@ -36,10 +36,14 @@
   form.append(notesLabel, urgentLabel, error, actions);
   dialog.append(form);
   document.body.append(dialog);
-  const trigger = button('Daily check-in', () => {
+  function openCheckin() {
     form.reset();
     error.textContent = '';
     dialog.showModal();
+  }
+  const trigger = button('Daily check-in', event => {
+    if (event.isTrusted) scrollOverviewTo($('metrics-title'), openCheckin);
+    else openCheckin();
   }, 'primary');
   trigger.dataset.checkin = '';
   document.querySelector('.hero-actions').prepend(trigger);

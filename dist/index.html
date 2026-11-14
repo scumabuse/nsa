@@ -13,6 +13,7 @@
   <script defer src="./language.js"></script>
   <script defer src="./app.js"></script>
   <script defer src="./bodymap.js"></script>
+  <script defer src="./mission-history.js"></script>
   <script defer src="./checkin.js"></script>
   <script defer src="./assistant.js"></script>
   <script defer src="./space-models.js"></script>
@@ -37,6 +38,7 @@
       <strong id="health-alert-title"></strong>
       <p id="health-alert-metrics"></p>
       <p id="health-alert-action"></p>
+      <button id="health-alert-details" type="button" class="small-button">Why this alert?</button>
     </div>
   </aside>
   <a class="skip" href="#main">Skip to content</a>
@@ -63,6 +65,13 @@
         <div class="hero-actions"><button class="primary" data-add>＋ New reading</button><button id="review-scenario" class="secondary" hidden>Review training scenario</button></div>
       </div>
       <div id="attention" class="banner" aria-live="polite"></div>
+      <div class="mission-timeline panel">
+        <label for="mission-day">Mission timeline</label>
+        <output id="mission-date" for="mission-day"></output>
+        <input id="mission-day" type="range" min="0" max="0" value="0">
+        <button id="mission-live" type="button" class="small-button">Return to current readings</button>
+      </div>
+      <button type="button" class="secondary" id="overview-handoff">Download crew handoff</button>
       <section class="panel guide-note" aria-labelledby="assistant-title">
         <div class="section-head">
           <h2 id="assistant-title">Reading assistant</h2>
@@ -71,23 +80,29 @@
         <div id="reading-explanation" aria-live="polite"></div>
       </section>
       <section aria-labelledby="metrics-title">
-        <div class="section-head"><h2 id="metrics-title">Health metrics</h2><span class="muted">Latest readings</span></div>
+        <div class="section-head"><h2 id="metrics-title">Health metrics</h2><button id="import-readings" type="button" class="secondary">Import readings</button></div>
+        <input id="readings-file" type="file" accept=".json,application/json" hidden>
+        <p id="import-status" class="hint" role="status"></p>
         <div class="metrics">
           <div id="metrics" class="metric-list"></div>
           <div id="metric-detail" class="metric-detail">
-            <div id="inline-entry"></div>
             <div id="metric-summary" aria-live="polite"></div>
+            <div id="metric-workspace" class="metric-card" hidden></div>
           </div>
         </div>
       </section>
       <div class="section-head"><h2 id="trend-title">Trends</h2></div>
-      <section class="panel" aria-labelledby="trend-title">
+      <section class="panel trend-layout" id="trend" aria-labelledby="trend-title">
+        <div id="trend-plot"></div>
+        <div class="trend-sidebar">
         <div class="chart-controls">
           <label>Metric <select id="trend-metric"></select></label>
           <label>Period <select id="period"><option value="7">7 days</option><option value="30">30 days</option><option value="all">All time</option></select></label>
         </div>
         <label id="trend-context-label" hidden>Measurement context <select id="trend-context"><option value="fasting">Fasting</option><option value="postmeal">After a meal</option><option value="unspecified">Unspecified</option></select></label>
-        <div id="trend"></div>
+        <div id="trend-key"></div>
+        <div id="trend-summary" aria-live="polite"></div>
+        </div>
       </section>
     </section>
     <section id="journal" aria-labelledby="journal-title" hidden>

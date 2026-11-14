@@ -15,6 +15,43 @@ Crew health|Здоровье экипажа
 Reading assistant|Помощник по показателям
 Dismiss health alert|Закрыть предупреждение о здоровье
 Explain my readings|Объяснить мои показатели
+Import readings|Импорт измерений
+Imported readings:|Загружено измерений:
+Duplicates skipped:|Пропущено дубликатов:
+Import failed.|Ошибка импорта.
+The JSON file is invalid.|Некорректный файл JSON.
+Import file exceeds 5 MB.|Размер файла превышает 5 МБ.
+Journal mode changed. Select the file again.|Режим журнала изменился. Выберите файл снова.
+Select a JSON report or an array of readings.|Выберите отчёт JSON или файл с массивом измерений.
+Open the journal mode that matches this report.|Переключитесь в режим журнала, соответствующий отчёту.
+Invalid reading in the import file.|В файле есть некорректное измерение.
+ORBIT HEALTH CREW HANDOFF|ORBIT HEALTH · СВОДКА ДЛЯ МЕДИКА
+TRAINING EXERCISE · SYNTHETIC CREW READINGS|УЧЕБНЫЙ РЕЖИМ · ВЫМЫШЛЕННЫЕ ИЗМЕРЕНИЯ
+PERSONAL LOG · SHARE THROUGH THE MISSION CHANNEL|ЛИЧНЫЙ ЖУРНАЛ · ПЕРЕДАЧА ПО КАНАЛУ МИССИИ
+Prepared (UTC):|Подготовлено (UTC):
+Recorded (UTC):|Записано (UTC):
+Snapshot (UTC):|Снимок истории (UTC):
+Status:|Статус:
+Next step:|Следующий шаг:
+Crew note:|Заметка экипажа:
+Meal context:|Контекст приёма пищи:
+RECORDED SYMPTOMS|ЗАПИСАННЫЕ СИМПТОМЫ
+Latest recorded value per metric. This file is saved locally for manual sharing.|Последнее записанное значение каждого показателя. Файл сохранён на устройстве для ручной передачи.
+Change from personal baseline|Отклонение от личной нормы
+Small change from personal baseline|Небольшое отклонение от личной нормы
+This reading contains invalid data.|Измерение содержит некорректные данные.
+Check the timestamp and values.|Проверьте дату и значения.
+Mission timeline|Хронология миссии
+Current readings|Текущие измерения
+Return to current readings|Вернуться к текущим измерениям
+Why this alert?|Почему появилось предупреждение?
+Review comparison|Посмотреть сравнение
+Symptom note|Описание симптома
+Save symptom|Записать симптом
+Symptom saved.|Симптом записан.
+Personal baseline:|Личная норма:
+More comparison days needed:|Не хватает дней для сравнения:
+Training comparison uses the exercise range.|Учебные значения сравниваются с диапазоном сценария.
 Local assessment|Локальная оценка
 Gemini · Training example|Gemini · Учебный пример
 Preparing the training explanation…|Готовим пояснение учебного примера…
@@ -161,7 +198,7 @@ Viewing angle|Ракурс
 Rotate anatomy model|Вращение анатомической модели
 Front|Спереди
 Side|Сбоку
-Back|Сзади
+Back|Назад
 Drag to rotate. Use the arrows when the model has focus.|Перетащите модель для вращения. Когда модель в фокусе, используйте клавиши со стрелками.
 Interactive anatomical zones|Интерактивные зоны тела
 Interactive body illustration|Интерактивная фигура
@@ -262,6 +299,8 @@ Could not save. Check browser storage and try again.|Не удалось сох�
     entries.set(key, { source, output });
     if (value !== output) write(output);
   }
+
+  window.OrbitTranslate = text => language === 'ru' ? translate(text) : text;
 
   function visit(node) {
     if (node.nodeType === Node.TEXT_NODE) {

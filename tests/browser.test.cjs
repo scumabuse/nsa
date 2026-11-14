@@ -24,12 +24,7 @@ async function run() {
       await id('entry-note').fill(note);
     };
     const save = async () => {
-      const inline = await id('inline-entry').locator('form:visible').count();
-      await id('entry-form').getByRole('button', { name: 'Save' }).click();
-      if (inline) {
-        await page.waitForFunction(() => [...document.querySelectorAll('#entry-values input')].every(input => input.value === ''));
-        return;
-      }
+      await id('entry-dialog').getByRole('button', { name: 'Save' }).click();
       await id('entry-dialog').waitFor({ state: 'hidden', timeout: 5000 });
     };
     await page.goto(base);

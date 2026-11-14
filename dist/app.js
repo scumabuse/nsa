@@ -14,6 +14,7 @@ const routes = ['overview', 'journal', 'radiation', 'guide'];
 const demoSeed = demoEntries(Date.now() - 3_600_000);
 let mode = 'demo';
 let entries = [];
+let snapshotDay = '';
 let editing = null;
 let deleting = null;
 let page = 1;
@@ -122,6 +123,7 @@ function renderOverview() {
 
 function renderMetricList(latest) {
   metricTransition?.cancel();
+  closeMetricWorkspace();
   const list = $('metrics');
   const detail = $('metric-detail');
   const rows = latest.map(({ metric, entry }, index) => {
@@ -152,6 +154,7 @@ function renderMetricList(latest) {
   }
 
   async function selectMetric(metric, animate = true) {
+    closeMetricWorkspace();
     activeMetric = metric;
     rows.forEach(row => row.setAttribute('aria-pressed', String(row.dataset.metric === metric)));
     metricTransition?.cancel();
@@ -180,10 +183,11 @@ function renderMetricList(latest) {
     const meta = element('p', entry ? dateTime.format(new Date(entry.at)) : 'No reading', 'hint');
     if (metric === 'glucose' && entry) meta.append(' · ' + contexts[entry.context ?? 'unspecified']);
     const actions = element('div', undefined, 'card-actions');
-    actions.append(button('View trend', () => showTrend(metric, entry)));
+    actions.append(button('Add reading', () => openInlineEntry(metric)), button('View trend', () => showTrend(metric, entry)));
+    if (entry && window.OrbitMission) actions.append(button('Review comparison', () =>
+      window.OrbitMission.showExplanation({ metric, entry, level, reason, action })));
     card.append(head, value, meta, element('p', reason, 'hint'), element('p', action), actions);
     $('metric-summary').replaceChildren(card);
-    mountInlineEntry(metric);
     if (motion) {
       metricTransition = detail.animate(mobile
         ? [{ opacity: 0, maxHeight: '0px' }, { opacity: 1, maxHeight: detail.scrollHeight + 'px' }]
@@ -201,7 +205,36 @@ function showTrend(metric, entry) {
   if (metric === 'glucose' && entry) $('trend-context').value = entry.context ?? 'unspecified';
   renderTrend();
   $('trend-metric').focus({ preventScroll: true });
-  $('trend-title').scrollIntoView();
+  scrollOverviewTo($('trend-title'));
+}
+
+let overviewScroll = 0;
+
+function scrollOverviewTo(target, after) {
+  cancelAnimationFrame(overviewScroll);
+  const behavior = flightMotion.matches ? 'smooth' : 'instant';
+  target.scrollIntoView({ behavior, block: 'start' });
+  const start = performance.now();
+  function finish(now) {
+    if (section !== 'overview' || document.querySelector('dialog[open]')) return;
+    const top = target.getBoundingClientRect().top;
+    const padding = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
+    const atBottom = Math.abs(document.documentElement.scrollHeight - innerHeight - scrollY) < 2;
+    const visible = top >= -1 && top < innerHeight;
+    if (behavior === 'instant' || Math.abs(top - padding) < 2 || (visible && (atBottom || now - start >= 850))) {
+      target.tabIndex = -1;
+      target.focus({ preventScroll: true });
+      after?.();
+    } else if (!after && now - start >= 850) {
+      if (!visible) target.scrollIntoView({ behavior, block: 'start' });
+    } else if (now - start < 1600) {
+      overviewScroll = requestAnimationFrame(finish);
+    } else if (after) {
+      target.scrollIntoView({ behavior: 'instant', block: 'start' });
+      after();
+    }
+  }
+  overviewScroll = requestAnimationFrame(finish);
 }
 
 function svg(tag, attrs, content) {
@@ -262,11 +295,15 @@ function renderTrend() {
   const period = $('period').value;
   const context = $('trend-context').value;
   $('trend-context-label').hidden = metric !== 'glucose';
-  const limit = period === 'all' ? -Infinity : Date.now() - Number(period) * day;
+  const snapshotEnd = snapshotDay ? Math.min(Date.now(), Date.parse(snapshotDay + 'T23:59:59.999Z')) : Date.now();
+  const limit = period === 'all' ? -Infinity : snapshotEnd - Number(period) * day;
   const rows = entries.filter((entry) => entry.metric === metric && Date.parse(entry.at) >= limit &&
+    Date.parse(entry.at) <= snapshotEnd &&
     (metric !== 'glucose' || (entry.context ?? 'unspecified') === context)).reverse();
-  const target = $('trend');
+  const target = $('trend-plot');
   target.replaceChildren();
+  $('trend-key').replaceChildren();
+  $('trend-summary').replaceChildren();
   if (!rows.length) {
     target.append(element('p', 'No readings match these filters.', 'empty'));
     return;
@@ -293,6 +330,7 @@ function renderTrend() {
     plot.append(svg('line', { x1: 54, x2: 548, y1: y(value), y2: y(value), stroke: '#40516e' }),
       svg('text', { x: 47, y: y(value) + 4, 'text-anchor': 'end', fill: '#c7d3e9', 'font-size': 12 }, number.format(value)));
   }
+  plot.append(svg('path', { d: 'M54 22 V159 H548', stroke: '#7187a6', fill: 'none' }));
   plot.append(svg('text', { x: x(rows[0]), y: 180, 'text-anchor': start === end ? 'middle' : 'start', fill: '#c7d3e9', 'font-size': 12 }, shortDate.format(start)));
   if (start !== end) plot.append(svg('text', { x: 548, y: 180, 'text-anchor': 'end', fill: '#c7d3e9', 'font-size': 12 }, shortDate.format(end)));
   const legend = element('div', undefined, 'legend');
@@ -306,13 +344,15 @@ function renderTrend() {
     const points = rows.map((row) => x(row) + ',' + y(row.values[key])).join(' ');
     plot.append(svg('polyline', { points, fill: 'none', stroke: color, 'stroke-width': 2.3 }));
     for (const row of rows.length <= 120 ? rows : [rows.at(-1)]) {
-      const point = svg('circle', { cx: x(row), cy: y(row.values[key]), r: 3.8, fill: color });
+      const point = svg('circle', { cx: x(row), cy: y(row.values[key]), r: 3.8, fill: '#f1f6ff', stroke: color, 'stroke-width': 1 });
       point.append(svg('title', {}, dateTime.format(new Date(row.at)) + ' · ' + fieldLabel + ' ' + number.format(row.values[key]) + ' ' + unit));
       plot.append(point);
     }
   });
   const last = rows.at(-1);
-  target.append(plot, legend, element('p', 'Readings: ' + rows.length + ' · Latest: ' + reading(last) + ' ' + unit, 'hint'));
+  target.append(plot);
+  $('trend-key').append(legend);
+  $('trend-summary').append(element('p', 'Readings: ' + rows.length + ' · Latest: ' + reading(last) + ' ' + unit, 'hint'));
 }
 
 function renderJournal() {
@@ -478,7 +518,7 @@ function renderHealthAlert() {
   const urgent = flagged.some(item => item.level === 'urgent');
   const relevant = urgent ? flagged.filter(item => item.level === 'urgent') : flagged;
   currentHealthAlert = relevant.length
-    ? JSON.stringify([mode, ...relevant.map(item => [item.entry.id, item.level, item.entry.at, item.entry.values])])
+    ? JSON.stringify([mode, snapshotDay, ...relevant.map(item => [item.entry.id, item.level, item.entry.at, item.entry.values])])
     : '';
   if (!currentHealthAlert) dismissedHealthAlert = '';
   alert.hidden = !currentHealthAlert || currentHealthAlert === dismissedHealthAlert;
@@ -496,6 +536,7 @@ function render() {
   if (section === 'overview') renderOverview();
   if (section === 'journal') renderJournal();
   if (section === 'radiation') renderRadiation();
+  window.dispatchEvent(new Event('orbit-update'));
 }
 
 function localTime(date = new Date()) {
@@ -547,29 +588,37 @@ function prepareEntry(metric, row = null) {
   renderFields(row?.values, row?.context);
 }
 
-function mountInlineEntry(metric) {
-  if ($('entry-dialog').open) return;
-  const form = $('entry-form');
-  const moved = form.parentElement !== $('inline-entry');
-  if (moved) $('inline-entry').append(form);
-  if (moved || form.dataset.mode !== mode || $('entry-metric').value !== metric) {
-    form.dataset.mode = mode;
-    prepareEntry(metric);
-  }
-}
-
-function openEntry(metric = 'bp', row = null) {
-  if (section === 'overview' && !row) {
-    activeMetric = metric;
-    renderMetricList(latestReadings());
-    $('entry-form').scrollIntoView({ block: 'nearest' });
-    $('entry-values').querySelector('input')?.focus({ preventScroll: true });
-    return;
-  }
+function openEntry(metric = section === 'overview' ? activeMetric : 'bp', row = null) {
+  closeMetricWorkspace();
   const dialog = $('entry-dialog');
-  dialog.append($('entry-form'));
   prepareEntry(metric, row);
   dialog.showModal();
+}
+
+function openMetricWorkspace(content) {
+  closeMetricWorkspace();
+  const workspace = $('metric-workspace');
+  workspace.append(content, button('Back', () => closeMetricWorkspace(true), 'secondary'));
+  $('metric-summary').hidden = true;
+  workspace.hidden = false;
+  workspace.tabIndex = -1;
+  workspace.focus({ preventScroll: true });
+}
+
+function closeMetricWorkspace(restoreFocus = false) {
+  const workspace = $('metric-workspace');
+  if (workspace.hidden) return;
+  const form = $('entry-form');
+  if (workspace.contains(form)) $('entry-dialog').append(form);
+  workspace.replaceChildren();
+  workspace.hidden = true;
+  $('metric-summary').hidden = false;
+  if (restoreFocus) $('metric-summary').querySelector('button')?.focus({ preventScroll: true });
+}
+
+function openInlineEntry(metric) {
+  prepareEntry(metric);
+  openMetricWorkspace($('entry-form'));
 }
 
 function showError(id, message) {
@@ -603,8 +652,8 @@ function saveEntry(event) {
     return showError('entry-error', failure.message === 'missing' ? 'This reading has already been deleted. Close the form and reload the log.' : 'Could not save the reading. Check browser storage permissions.');
   }
   if (!editing) page = 1;
-  if ($('entry-dialog').open) $('entry-dialog').close();
-  else prepareEntry(metric);
+  if ($('metric-workspace').contains($('entry-form'))) closeMetricWorkspace();
+  else $('entry-dialog').close();
   render();
   if (section === 'journal') $('journal-filter').focus();
   notify('Reading saved.');
@@ -630,10 +679,11 @@ function deleteEntry(event) {
   notify('Reading deleted.');
 }
 
-function latestReadings() {
+function latestReadings(rows = snapshotDay ? entries.filter(row => row.at.slice(0, 10) <= snapshotDay) : entries,
+  now = snapshotDay ? Math.min(Date.now(), Date.parse(snapshotDay + 'T23:59:59.999Z')) : Date.now()) {
   return Object.keys(metrics).map((metric) => {
-    const entry = entries.find((row) => row.metric === metric);
-    return { metric, entry, ...assess(entry, entries) };
+    const entry = rows.find((row) => row.metric === metric);
+    return { metric, entry, ...assess(entry, rows, now) };
   });
 }
 
@@ -650,34 +700,86 @@ function downloadFile(content, mimeType, filename) {
 }
 
 function exportJournal() {
+  const t = window.OrbitTranslate;
   const exportedAt = new Date().toISOString();
-  const latest = latestReadings().map(({ metric, entry, ...assessment }) => ({
-    metric, label: metrics[metric].label, unit: metrics[metric].unit, entryId: entry?.id ?? null, ...assessment,
+  const latest = latestReadings(entries, Date.now()).map(({ metric, entry, ...assessment }) => ({
+    metric, label: t(metrics[metric].label), unit: t(metrics[metric].unit), entryId: entry?.id ?? null,
+    ...assessment, reason: t(assessment.reason), action: t(assessment.action),
   }));
-  const report = { format: 'orbit-health-report', version: 1, mode, exportedAt, latest, entries };
+  const report = { format: 'orbit-health-report', version: 1, language: document.documentElement.lang, mode, exportedAt, latest, entries };
   downloadFile(JSON.stringify(report, null, 2), 'application/json;charset=utf-8',
     'orbit-health-' + mode + '-' + exportedAt.slice(0, 10) + '.json');
 }
 
 function exportHandoff() {
+  const t = window.OrbitTranslate;
   const exportedAt = new Date().toISOString();
   const priority = { urgent: 0, watch: 1, stale: 2, unknown: 3, ok: 4 };
   const blocks = latestReadings().filter(({ entry }) => entry)
     .sort((a, b) => priority[a.level] - priority[b.level])
     .map(({ metric, entry, level, reason, action }) => [
-      metrics[metric].label + ' · ' + reading(entry) + ' ' + metrics[metric].unit,
+      t(metrics[metric].label) + ' · ' + reading(entry) + ' ' + t(metrics[metric].unit),
       'Recorded (UTC): ' + entry.at,
       'Status: ' + statusText(level),
       reason,
       'Next step: ' + action,
       ...(metric === 'glucose' ? ['Meal context: ' + contexts[entry.context ?? 'unspecified']] : []),
-      ...(entry.note ? ['Crew note: ' + entry.note] : []),
-    ].join('\n'));
+      ...(entry.note ? [t('Crew note:') + ' ' + entry.note] : []),
+    ].map((line, index, lines) => entry.note && index === lines.length - 1 ? line : t(line)).join('\n'));
   const header = mode === 'demo' ? 'TRAINING EXERCISE · SYNTHETIC CREW READINGS' : 'PERSONAL LOG · SHARE THROUGH THE MISSION CHANNEL';
   downloadFile(['ORBIT HEALTH CREW HANDOFF', header, 'Prepared (UTC): ' + exportedAt,
-    'Latest recorded value per metric. This file is saved locally for manual sharing.', '', blocks.join('\n\n')].join('\n'),
+    ...(snapshotDay ? ['Snapshot (UTC): ' + snapshotDay] : []),
+    'Latest recorded value per metric. This file is saved locally for manual sharing.'].map(t).concat('', blocks.join('\n\n'),
+    window.OrbitMission ? ['', ...window.OrbitMission.handoff()] : []).join('\n'),
   'text/plain;charset=utf-8', 'orbit-health-handoff-' + mode + '-' + exportedAt.slice(0, 10) + '.txt');
 }
+
+const importFile = $('readings-file');
+$('import-readings').addEventListener('click', () => importFile.click());
+importFile.addEventListener('change', async () => {
+  const file = importFile.files[0];
+  if (!file) return;
+  importFile.value = '';
+  const targetMode = mode;
+  const status = $('import-status');
+  try {
+    if (file.size > 5_000_000) throw new Error('Import file exceeds 5 MB.');
+    const data = JSON.parse((await file.text()).replace(/^\uFEFF/, ''));
+    if (mode !== targetMode) throw new Error('Journal mode changed. Select the file again.');
+    const rows = Array.isArray(data) ? data : data?.entries;
+    if (!Array.isArray(rows) || !rows.length) throw new Error('Select a JSON report or an array of readings.');
+    if (!Array.isArray(data) && data.mode && data.mode !== mode) throw new Error('Open the journal mode that matches this report.');
+    const prepared = rows.map(row => {
+      if (!row || typeof row !== 'object') throw new Error('Invalid reading in the import file.');
+      if (row.demo !== undefined && row.demo !== (mode === 'demo')) throw new Error('Open the journal mode that matches this report.');
+      const entry = {
+        id: row.id ?? crypto.randomUUID(), metric: row.metric, at: row.at,
+        values: row.values, note: row.note ?? '', urgent: row.urgent ?? false, demo: mode === 'demo',
+        ...(row.context === undefined ? {} : { context: row.context }),
+      };
+      const error = validate(entry);
+      if (error) throw new Error(error);
+      return entry;
+    });
+    let added = 0;
+    updateJournal(current => {
+      const known = new Set(current.map(row => row.id));
+      const fresh = prepared.filter(row => {
+        if (known.has(row.id)) return false;
+        known.add(row.id);
+        return true;
+      });
+      added = fresh.length;
+      return [...fresh, ...current];
+    });
+    snapshotDay = '';
+    page = 1;
+    render();
+    status.textContent = 'Imported readings: ' + added + ' · Duplicates skipped: ' + (rows.length - added);
+  } catch (error) {
+    status.textContent = error instanceof SyntaxError ? 'The JSON file is invalid.' : 'Import failed. ' + error.message;
+  }
+});
 
 for (const row of OrbitRadData.observations) {
   $('rad-observation').add(new Option(row.utc.slice(11, 19), row.id));
@@ -714,6 +816,7 @@ window.addEventListener('storage', (event) => {
 });
 for (const id of ['trend-metric', 'trend-context', 'period']) $(id).addEventListener('change', renderTrend);
 $('mode').addEventListener('change', () => {
+  snapshotDay = '';
   mode = $('mode').value;
   page = 1;
   reloadJournal();
@@ -727,12 +830,6 @@ $('mode').addEventListener('change', () => {
 });
 $('journal-filter').addEventListener('change', () => { page = 1; renderJournal(); });
 $('entry-metric').addEventListener('change', () => {
-  if (!$('entry-dialog').open) {
-    activeMetric = $('entry-metric').value;
-    prepareEntry(activeMetric);
-    renderMetricList(latestReadings());
-    return;
-  }
   $('entry-error').hidden = true;
   renderFields();
 });
@@ -747,11 +844,13 @@ $('export').addEventListener('click', exportJournal);
 $('export-handoff').addEventListener('click', exportHandoff);
 $('review-scenario').addEventListener('click', () => showTrend('sleep'));
 for (const id of ['rad-detector', 'rad-observation']) $(id).addEventListener('change', renderRadiation);
-for (const trigger of document.querySelectorAll('[data-add]')) trigger.addEventListener('click', () => openEntry());
+for (const trigger of document.querySelectorAll('[data-add]')) trigger.addEventListener('click', () => {
+  if (trigger.closest('.hero-actions')) scrollOverviewTo($('metrics-title'), () => openEntry());
+  else openEntry();
+});
 for (const trigger of document.querySelectorAll('[data-close]')) trigger.addEventListener('click', () => {
-  const dialog = trigger.closest('dialog');
-  if (dialog) dialog.close();
-  else prepareEntry(activeMetric);
+  if ($('metric-workspace').contains(trigger)) closeMetricWorkspace(true);
+  else trigger.closest('dialog').close();
 });
 
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {

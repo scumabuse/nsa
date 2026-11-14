@@ -16,6 +16,7 @@ export function createAnatomyViewer(host, svg, select, preview, registerBone) {
   const ray = new T.Raycaster();
   const pointer = new T.Vector2();
   let current, selected, hovered, drag;
+  let marked = new Set();
   let yaw = -.28, pitch = 0, zoom = 0;
   scene.add(model, new T.HemisphereLight(0xcceaff, 0x555271, 2));
   const key = new T.DirectionalLight(0xffe3dd, 2.6);
@@ -98,12 +99,13 @@ export function createAnatomyViewer(host, svg, select, preview, registerBone) {
         for (let i = 0; i < colors.count; i++) {
           const region = mesh.userData.regions[i];
           if (region === hovered || region === selected) colors.setXYZ(i, 1.15, .16, .19);
+          else if (marked.has(region)) colors.setXYZ(i, 1.12, .43, .32);
           else colors.setXYZ(i, 1, 1, 1);
         }
         colors.needsUpdate = true;
       }
       mesh.material.color.setHex(zone && zone === hovered ? 0xff566e : color);
-      mesh.material.emissive.setHex(zone && zone === selected ? 0x5d182a : 0);
+      mesh.material.emissive.setHex(zone && zone === selected ? 0x5d182a : marked.has(zone) ? 0x6b2620 : 0);
     }
     draw();
   }
@@ -285,6 +287,7 @@ export function createAnatomyViewer(host, svg, select, preview, registerBone) {
       highlight();
     },
     select(zone) { selected = zone; highlight(); },
+    mark(zones) { marked = zones; highlight(); },
     zoom(value) { zoom = value; draw(); },
   };
 }

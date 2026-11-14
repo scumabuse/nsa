@@ -12,6 +12,11 @@
 [data-anatomy="muscles"] { opacity:.72; }
 .bones { fill:none; stroke:#8ae9ff; stroke-linecap:round; stroke-linejoin:round; filter:drop-shadow(0 0 3px #3ae7ff80); opacity:.79; }
 .body-region { fill:transparent; pointer-events:fill; cursor:pointer; }
+[data-body-view] [data-symptom]:not(:hover) { fill:#e55e4980; stroke:#ffa48f; }
+.zone-symptoms { flex-basis:100%; }
+.symptom-form, .symptom-form label { display:grid; gap:.35rem; }
+.symptom-form { margin-top:.55rem; }
+.symptom-form button { justify-self:start; }
 .body-region[aria-pressed=true] { fill:#ec243f63; stroke:#ff5b69; stroke-width:1.5; }
 .body-region[data-preview],.body-region:hover,.body-region:focus-visible,
 .anatomy-structure[data-preview],.anatomy-structure:hover,.anatomy-structure:focus-visible {
