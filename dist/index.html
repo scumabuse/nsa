@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10172b">
+  <meta name="description" content="Автономный журнал самонаблюдения экипажа для длительных космических миссий.">
+  <title>Orbit Health — здоровье экипажа</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script defer src="./model.js"></script>
+  <script defer src="./app.js"></script>
+</head>
+<body>
+  <a class="skip" href="#main">Перейти к содержимому</a>
+  <header class="topbar">
+    <div class="wrap header-row">
+      <a class="brand" href="#overview"><span class="mark" aria-hidden="true">✦</span><span>Orbit Health <small>Журнал экипажа</small></span></a>
+      <nav aria-label="Разделы">
+        <a href="#overview">Обзор</a>
+        <a href="#journal">Журнал</a>
+        <a href="#guide">Справочник</a>
+      </nav>
+      <label class="mode"><span>Режим</span><select id="mode"><option value="demo">Демо</option><option value="personal">Личный журнал</option></select></label>
+    </div>
+  </header>
+  <main id="main" class="wrap" tabindex="-1">
+    <div id="storage-warning" class="banner urgent" role="alert" hidden></div>
+    <div id="notice" class="visually-hidden" role="status"></div>
+    <noscript><p class="banner">Для работы журнала включите JavaScript.</p></noscript>
+    <section id="overview" aria-labelledby="overview-title">
+      <div class="hero">
+        <div><p id="mode-description" class="eyebrow"></p><h1 id="overview-title">Здоровье экипажа</h1><p>Фиксируйте показатели, отслеживайте динамику и готовьте сводку для бортмедика.</p></div>
+        <button class="primary" data-add>＋ Новое измерение</button>
+      </div>
+      <div id="attention" class="banner" aria-live="polite"></div>
+      <section aria-labelledby="metrics-title">
+        <div class="section-head"><h2 id="metrics-title">Показатели</h2><span class="muted">Последние измерения</span></div>
+        <div id="metrics" class="metrics"></div>
+      </section>
+      <div class="section-head"><h2 id="trend-title">Динамика</h2></div>
+      <section class="panel" aria-labelledby="trend-title">
+        <div class="chart-controls">
+          <label>Показатель <select id="trend-metric"></select></label>
+          <label>Период <select id="period"><option value="7">7 дней</option><option value="30">30 дней</option><option value="all">Всё время</option></select></label>
+        </div>
+        <label id="trend-context-label" hidden>Условия измерения <select id="trend-context"><option value="fasting">Натощак</option><option value="postmeal">После еды</option><option value="unspecified">Не указаны</option></select></label>
+        <div id="trend"></div>
+      </section>
+    </section>
+    <section id="journal" aria-labelledby="journal-title" hidden>
+      <div class="page-head"><div><h1 id="journal-title">Журнал измерений</h1><p>Просматривайте записи и выгружайте сводку для передачи по каналу миссии.</p></div><button class="primary" data-add>＋ Новое измерение</button></div>
+      <div class="panel">
+        <div class="chart-controls">
+          <label>Показатель <select id="journal-filter"><option value="all">Все показатели</option></select></label>
+          <button id="export" class="secondary">Скачать сводку JSON</button>
+        </div>
+        <div id="entries"></div>
+      </div>
+    </section>
+    <section id="guide" aria-labelledby="guide-title" hidden>
+      <div class="page-head"><div><h1 id="guide-title">Справочник экипажа</h1><p>Подготовка к измерениям и порядок действий при изменениях.</p></div></div>
+      <div class="guide-grid">
+        <article class="panel">
+          <h2>Как измерять</h2>
+          <div id="measurement-guide"></div>
+        </article>
+        <article class="panel">
+          <h2>Пять опасностей полёта</h2>
+          <dl class="hazards">
+            <dt>Космическое излучение</dt><dd>Учитывайте данные бортовой дозиметрии и события миссии. Показатели журнала сами по себе не отражают полученную дозу.</dd>
+            <dt>Изоляция и замкнутость</dt><dd>Записи о сне и настроении помогают заметить изменения и обсудить их с экипажем.</dd>
+            <dt>Удалённость от Земли</dt><dd>При задержке связи используйте бортовой протокол. Сводку можно выгрузить для следующего окна связи.</dd>
+            <dt>Изменённая гравитация</dt><dd>Сопоставляйте пульс и давление при одинаковом положении тела и уровне нагрузки. Риски для костей требуют отдельных измерений по плану миссии.</dd>
+            <dt>Неблагоприятная замкнутая среда</dt><dd>При изменениях сна или самочувствия сопоставьте записи с условиями на борту и сообщите экипажу о совпадающих изменениях у нескольких людей.</dd>
+          </dl>
+          <a href="https://www.nasa.gov/hrp/hazards/" target="_blank" rel="noopener noreferrer">NASA Human Research Program ↗</a>
+        </article>
+      </div>
+      <article class="panel guide-note">
+        <h2>Как читать статусы</h2>
+        <p>Демо показывает сценарии на синтетических данных. Личный журнал сопоставляет записи с вашей историей. При отклонении проверьте условия замера, запишите контекст и действуйте по медицинскому протоколу миссии. При серьёзных симптомах сразу сообщите бортмедику по каналу миссии.</p>
+      </article>
+    </section>
+    <footer><span>NASA Space Apps Challenge 2026 · Хакатонный прототип</span><span id="offline">Данные хранятся в этом браузере</span></footer>
+  </main>
+  <dialog id="entry-dialog" aria-labelledby="entry-title">
+    <form id="entry-form">
+      <div class="dialog-head"><h2 id="entry-title">Новое измерение</h2><button type="button" class="close" data-close aria-label="Закрыть">×</button></div>
+      <p id="entry-mode" class="muted"></p>
+      <label>Показатель <select id="entry-metric" required></select></label>
+      <p id="entry-guide" class="hint"></p>
+      <div id="entry-values" class="form-grid"></div>
+      <label>Дата и время измерения <input id="entry-time" type="datetime-local" step="1" required></label>
+      <label>Примечание <textarea id="entry-note" rows="2" maxlength="500" placeholder="Положение тела, нагрузка или самочувствие"></textarea></label>
+      <label class="checkbox"><input type="checkbox" id="entry-urgent"> Отметить серьёзные симптомы</label>
+      <p id="urgent-hint" class="hint urgent-text" role="status" hidden>Сразу свяжитесь с бортмедиком по протоколу миссии. Запись в журнале не отправляет сообщение.</p>
+      <p id="entry-error" class="urgent-text" role="alert" hidden></p>
+      <div class="dialog-actions"><button type="button" class="secondary" data-close>Отмена</button><button type="submit" class="primary">Сохранить</button></div>
+    </form>
+  </dialog>
+  <dialog id="delete-dialog" aria-labelledby="delete-title">
+    <form id="delete-form">
+      <div class="dialog-head"><h2 id="delete-title">Удалить измерение?</h2></div>
+      <p id="delete-description"></p>
+      <p id="delete-error" class="urgent-text" role="alert" hidden></p>
+      <div class="dialog-actions"><button type="button" class="secondary" data-close autofocus>Отмена</button><button type="submit" class="danger">Удалить</button></div>
+    </form>
+  </dialog>
+</body>
+</html>
