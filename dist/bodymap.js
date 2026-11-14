@@ -280,13 +280,6 @@
     const actions = panel.querySelector('#body-zone-actions');
     actions.dataset.zone = name;
     actions.replaceChildren();
-    if (!readings.length) {
-      const checkin = document.createElement('button');
-      checkin.className = 'secondary';
-      checkin.textContent = 'Record symptoms';
-      checkin.addEventListener('click', () => document.querySelector('[data-checkin]').click());
-      actions.append(checkin);
-    }
     for (const metric of readings) {
       const trigger = document.createElement('button');
       trigger.className = 'secondary';
@@ -296,7 +289,7 @@
     }
     const symptomDetails = element('div', undefined, 'zone-symptoms');
     actions.append(symptomDetails);
-    window.OrbitMission?.zoneDetails(symptomDetails, name, title);
+    window.OrbitMission?.zoneDetails(symptomDetails, name, title, readings);
   }
   window.addEventListener('orbit-update', () => {
     const marked = window.OrbitMission?.markedZones() || new Set();

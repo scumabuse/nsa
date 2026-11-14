@@ -50,6 +50,7 @@
         <a href="#journal">Log</a>
         <a href="#radiation">NASA data</a>
         <a href="#guide">Guide</a>
+        <a href="#assistant">Reading assistant</a>
       </nav>
       <div class="header-settings"><label class="mode"><span>Mode</span><select id="mode"><option value="demo">Training</option><option value="personal">Personal log</option></select></label>
       <select id="language" aria-label="Language"><option value="en" lang="en">EN</option><option value="ru" lang="ru">RU</option></select></div>
@@ -72,13 +73,7 @@
         <button id="mission-live" type="button" class="small-button">Return to current readings</button>
       </div>
       <button type="button" class="secondary" id="overview-handoff">Download crew handoff</button>
-      <section class="panel guide-note" aria-labelledby="assistant-title">
-        <div class="section-head">
-          <h2 id="assistant-title">Reading assistant</h2>
-          <button id="explain-readings" class="secondary" type="button">Explain my readings</button>
-        </div>
-        <div id="reading-explanation" aria-live="polite"></div>
-      </section>
+      <a id="explain-readings" class="secondary assistant-link" href="#assistant">Explain my readings</a>
       <section aria-labelledby="metrics-title">
         <div class="section-head"><h2 id="metrics-title">Health metrics</h2><button id="import-readings" type="button" class="secondary">Import readings</button></div>
         <input id="readings-file" type="file" accept=".json,application/json" hidden>
@@ -114,6 +109,7 @@
           <button id="export" class="secondary">Download JSON report</button>
         </div>
         <div id="entries"></div>
+        <div id="journal-entry" class="panel" hidden></div>
       </div>
     </section>
     <section id="radiation" aria-labelledby="radiation-title" hidden>
@@ -175,6 +171,21 @@
         <h2>Reading the status labels</h2>
         <p>Training uses synthetic crew readings. The personal log compares recent measurements with your own history. If a reading changes, check the conditions, log the context and follow the mission medical protocol. Report serious symptoms to the onboard medic immediately.</p>
       </article>
+    </section>
+    <section id="assistant" aria-labelledby="assistant-title" hidden>
+      <div class="assistant-surface">
+        <div class="assistant-header">
+          <div>
+            <p class="assistant-eyebrow">Local assessment</p>
+            <h1 id="assistant-title">Reading assistant</h1>
+            <p id="assistant-counts" class="hint"></p>
+          </div>
+          <button id="refresh-explanation" class="secondary" type="button">Explain my readings</button>
+        </div>
+        <div id="assistant-symptom" class="assistant-results" hidden></div>
+        <div id="assistant-metrics" class="assistant-metrics"></div>
+        <div id="reading-explanation" class="assistant-results" aria-live="polite"></div>
+      </div>
     </section>
     <footer><span>NASA Space Apps Challenge 2026 · Hackathon prototype</span><span>Moon maps: <a href="https://svs.gsfc.nasa.gov/4720/">NASA SVS / LRO</a> · Mars relief: <a href="https://pds-geosciences.wustl.edu/missions/mgs/megdr.html">NASA PDS / MOLA</a> · Planet colors: <a href="https://play.solarsystemscope.com/textures/">Solar System Scope</a> (<a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>)</span><span id="offline">Data stored in this browser</span></footer>
   </main>

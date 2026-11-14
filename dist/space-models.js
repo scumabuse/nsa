@@ -80,12 +80,32 @@
       return surface;
     }
 
+    vec2 orbitalCraft(vec3 p) {
+      if (model != 11) return satellite(p);
+      float truss = box(p, vec3(.87,.023,.027));
+      float module = max(length(p.xy) - .115, abs(p.z) - .33);
+      float junction = length(p) - .15;
+      float lab = max(length(p.yz - vec2(.035,.07)) - .088, abs(p.x) - .31);
+      float collar = max(abs(length(p.xy) - .108) - .013, abs(abs(p.z) - .315) - .025);
+      vec2 hull = vec2(min(min(truss, module), min(lab, collar)), 3.);
+      if (junction < hull.x) hull = vec2(junction, 4.);
+      vec3 wing = vec3(abs(p.x), abs(p.y), abs(p.z));
+      float frame = box(wing - vec3(.65,.30,.038), vec3(.17,.23,.018));
+      float panel = box(wing - vec3(.65,.30,.053), vec3(.156,.214,.012));
+      float mast = rod(p, vec3(0., .08, -.26), vec3(-.20, .32, -.19), .012);
+      float radiator = box(vec3(abs(p.x), p.yz) - vec3(.30,-.14,-.07), vec3(.075,.135,.017));
+      if (min(frame,mast) < hull.x) hull = vec2(min(frame,mast), 3.);
+      if (radiator < hull.x) hull = vec2(radiator, 4.);
+      if (panel < hull.x) hull = vec2(panel, 2.);
+      return hull;
+    }
+
     vec3 satelliteNormal(vec3 p) {
       vec2 e = vec2(.003, 0.);
       return normalize(vec3(
-        satellite(p + e.xyy).x - satellite(p - e.xyy).x,
-        satellite(p + e.yxy).x - satellite(p - e.yxy).x,
-        satellite(p + e.yyx).x - satellite(p - e.yyx).x
+        orbitalCraft(p + e.xyy).x - orbitalCraft(p - e.xyy).x,
+        orbitalCraft(p + e.yxy).x - orbitalCraft(p - e.yxy).x,
+        orbitalCraft(p + e.yyx).x - orbitalCraft(p - e.yyx).x
       ));
     }
 
@@ -102,7 +122,7 @@
       float distance = 0.;
       for (int iteration = 0; iteration < 58; iteration++) {
         vec3 p = origin + ray * distance;
-        vec2 hit = satellite(p);
+        vec2 hit = orbitalCraft(p);
         if (hit.x < .002) {
           vec3 normal = satelliteNormal(p);
           vec3 sun = vec3(roll * light.xy, light.z);
@@ -475,7 +495,7 @@
       else if (model == 7) renderRocket();
       else if (model == 5) renderBlackHole();
       else if (model == 6) renderSaucer();
-      else if (model == 2) renderSatellite();
+      else if (model == 2 || model == 11) renderSatellite();
       else renderPlanet();
     }`;
 
@@ -570,9 +590,11 @@
       const overviewMetricsY = metricBounds.height
         ? window.scrollY + metricBounds.top + Math.min(metricBounds.height * .44, 310)
         : height * 1.05;
+      const overviewEarth = [0, width * (compact ? .62 : .27), overviewMetricsY, Math.min(width * (compact ? 1.38 : .69), 900)];
+      const closeEarth = [0, width * (compact ? .86 : .77), height * .49, Math.min(width * 1.28, 1050)];
       const overview = [
         [3, width * .79, height * (compact ? .19 : .31), Math.min(width * (compact ? .53 : .40), 570)],
-        [0, width * (compact ? .62 : .27), overviewMetricsY, Math.min(width * (compact ? 1.38 : .69), 900)],
+        overviewEarth,
         [2, width * .61, height * .18, compact ? 56 : 106],
         distantMoon,
         [2, width * .79, height * 1.22, compact ? 74 : 125],
@@ -581,6 +603,11 @@
         [10, width * .89, height * .94, compact ? 71 : 144],
       ];
       const sectors = {
+        assistant: [
+          closeEarth,
+          [11, width * (compact ? .82 : .76), height * .27, Math.min(width * .46, 320)],
+          [4, width * .14, height * .77, Math.min(width * .12, 110)],
+        ],
         journal: [
           closeMoon,
           distantMars,
@@ -620,12 +647,14 @@
         const progress = Math.min(1, (now - approach.start) / approach.duration);
         const eased = progress * progress * (3 - 2 * progress);
         const paths = {
+          assistant: [[0, overviewEarth[1], Math.min(height * .87, overviewEarth[2]), overviewEarth[3]], closeEarth],
           journal: [distantMoon, closeMoon],
           radiation: [distantMars, closeMars],
           guide: [distantRelay, closeRelay],
         };
         const [start, end] = paths[approach.destination];
-        const surroundings = objects.filter(object => object !== start).map(([model, x, y, size]) => [
+        const departure = approach.destination === 'assistant' ? overviewEarth : start;
+        const surroundings = objects.filter(object => object !== departure).map(([model, x, y, size]) => [
           model, x + (x - start[1]) * eased * .45, y + (y - start[2]) * eased * .45, size * (1 - eased * .85),
         ]);
         const target = start.map((value, i) => value + (end[i] - value) * eased);

@@ -10,7 +10,7 @@ const dateTime = new Intl.DateTimeFormat('en-GB', { dateStyle: 'short', timeStyl
 const shortDate = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short' });
 const number = new Intl.NumberFormat('en-GB', { maximumFractionDigits: 2 });
 const day = 86_400_000;
-const routes = ['overview', 'journal', 'radiation', 'guide'];
+const routes = ['overview', 'journal', 'radiation', 'guide', 'assistant'];
 const demoSeed = demoEntries(Date.now() - 3_600_000);
 let mode = 'demo';
 let entries = [];
@@ -466,7 +466,7 @@ function animateRoute(destination, direction) {
     showSector(destination.id);
     return;
   }
-  const approachFrom = { journal: 'overview', radiation: 'journal', guide: 'radiation' };
+  const approachFrom = { journal: 'overview', radiation: 'journal', guide: 'radiation', assistant: 'overview' };
   if (approachFrom[destination.id] === document.body.dataset.sector) {
     const duration = 1150;
     window.dispatchEvent(new CustomEvent('sectorapproach', { detail: { destination: destination.id, duration } }));
@@ -513,6 +513,7 @@ function route(focus = false) {
   if (name === 'main') return;
   const previous = section;
   section = routes.includes(name) ? name : 'overview';
+  if (previous === 'journal' && section !== previous) closeJournalEntry();
   for (const id of routes) $(id).hidden = id !== section;
   for (const link of document.querySelectorAll('nav a')) {
     if (link.hash === '#' + section) link.setAttribute('aria-current', 'page');
@@ -643,6 +644,24 @@ function openInlineEntry(metric) {
   openMetricWorkspace($('entry-form'));
 }
 
+function openJournalEntry() {
+  const panel = $('journal-entry');
+  prepareEntry('bp');
+  panel.append($('entry-form'));
+  $('entries').hidden = true;
+  panel.hidden = false;
+  $('entry-metric').focus();
+}
+
+function closeJournalEntry(restoreFocus = false) {
+  const panel = $('journal-entry');
+  if (panel.hidden) return;
+  $('entry-dialog').append($('entry-form'));
+  panel.hidden = true;
+  $('entries').hidden = false;
+  if (restoreFocus) $('journal').querySelector('[data-add]').focus();
+}
+
 function showError(id, message) {
   $(id).textContent = message;
   $(id).hidden = false;
@@ -675,6 +694,7 @@ function saveEntry(event) {
   }
   if (!editing) page = 1;
   if ($('metric-workspace').contains($('entry-form'))) closeMetricWorkspace();
+  else if ($('journal-entry').contains($('entry-form'))) closeJournalEntry();
   else $('entry-dialog').close();
   render();
   if (section === 'journal') $('journal-filter').focus();
@@ -838,6 +858,7 @@ window.addEventListener('storage', (event) => {
 });
 for (const id of ['trend-metric', 'trend-context', 'period']) $(id).addEventListener('change', renderTrend);
 $('mode').addEventListener('change', () => {
+  closeJournalEntry();
   snapshotDay = '';
   mode = $('mode').value;
   page = 1;
@@ -877,11 +898,14 @@ $('export-handoff').addEventListener('click', exportHandoff);
 $('review-scenario').addEventListener('click', () => showTrend('sleep'));
 for (const id of ['rad-detector', 'rad-observation']) $(id).addEventListener('change', renderRadiation);
 for (const trigger of document.querySelectorAll('[data-add]')) trigger.addEventListener('click', () => {
-  if (trigger.closest('.hero-actions')) scrollOverviewTo($('metrics-title'), () => openEntry());
-  else openEntry();
+  if (trigger.closest('.hero-actions')) scrollOverviewTo($('metrics-title'), () => {
+    if (section === 'overview') openInlineEntry(activeMetric);
+  });
+  else openJournalEntry();
 });
 for (const trigger of document.querySelectorAll('[data-close]')) trigger.addEventListener('click', () => {
   if ($('metric-workspace').contains(trigger)) closeMetricWorkspace(true);
+  else if ($('journal-entry').contains(trigger)) closeJournalEntry(true);
   else trigger.closest('dialog').close();
 });
 

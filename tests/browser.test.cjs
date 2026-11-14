@@ -24,8 +24,8 @@ async function run() {
       await id('entry-note').fill(note);
     };
     const save = async () => {
-      await id('entry-dialog').getByRole('button', { name: 'Save' }).click();
-      await id('entry-dialog').waitFor({ state: 'hidden', timeout: 5000 });
+      await id('entry-form').getByRole('button', { name: 'Save' }).click();
+      await id('entry-form').waitFor({ state: 'hidden', timeout: 5000 });
     };
     await page.goto(base);
     assert.equal(await id('metrics').locator('.metric-row').count(), 6);
@@ -60,7 +60,7 @@ async function run() {
     assert.equal(await id('export').isDisabled(), true);
 
     await add('bp', { systolic: 80, diastolic: 90 });
-    await id('entry-dialog').getByRole('button', { name: 'Save' }).click();
+    await id('journal-entry').getByRole('button', { name: 'Save' }).click();
     await visible(id('entry-error'));
     assert.match(await id('entry-error').innerText(), /Systolic pressure/);
     await page.locator('[name=systolic]').fill('125');
@@ -139,7 +139,25 @@ async function run() {
     await page.getByRole('link', { name: 'Overview', exact: true }).click();
     assert.match(await id('attention').innerText(), /Sleep/);
     await add('pulse', { value: 84 });
+    await visible(id('metric-workspace').locator('#entry-form'));
+    assert.equal(await id('entry-dialog').evaluate(dialog => dialog.open), false);
     await save();
+    await id('body-zone-actions').locator('.symptom-form textarea').fill('Training symptom');
+    await id('body-zone-actions').getByRole('button', { name: 'Save symptom' }).click();
+    assert.match(await id('body-zone-actions').locator('.symptom-guidance').innerText(), /Next step:.*onboard medic/s);
+    assert.equal(await page.locator(':focus').getAttribute('class'), 'symptom-guidance');
+    await id('body-zone-actions').getByRole('link', { name: 'Recommendations' }).click();
+    await visible(id('assistant-symptom'));
+    assert.match(await id('assistant-symptom').innerText(), /Training symptom/);
+    await page.route('**/api/training-explanation?*', async route => {
+      if (route.request().method() !== 'POST') return route.continue();
+      assert.equal(route.request().postDataJSON().note, 'Training symptom');
+      await route.fulfill({ json: { explanation: 'Record when the symptom began.' } });
+    });
+    await id('assistant-symptom').getByRole('button', { name: 'Get recommendation' }).click();
+    await visible(id('assistant-symptom').getByText('Record when the symptom began.'));
+    await page.waitForFunction(() => document.body.dataset.sector === 'assistant');
+    await page.getByRole('link', { name: 'Overview', exact: true }).click();
     await add('temp', { value: 36.8 });
     await save();
     await add('mood', { value: 5 });

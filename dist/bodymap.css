@@ -17,6 +17,8 @@
 .symptom-form, .symptom-form label { display:grid; gap:.35rem; }
 .symptom-form { margin-top:.55rem; }
 .symptom-form button { justify-self:start; }
+.symptom-guidance { margin-block:.7rem; padding:.65rem .8rem; border-inline-start:2px solid #9bc9ee; background:#14263b80; }
+.symptom-guidance p { margin-top:.25rem; }
 .body-region[aria-pressed=true] { fill:#ec243f63; stroke:#ff5b69; stroke-width:1.5; }
 .body-region[data-preview],.body-region:hover,.body-region:focus-visible,
 .anatomy-structure[data-preview],.anatomy-structure:hover,.anatomy-structure:focus-visible {

@@ -23,9 +23,29 @@
     return symptoms().filter(row => !snapshotDay || row.at.slice(0, 10) <= snapshotDay);
   }
 
-  function zoneDetails(container, zone, title) {
+  function zoneDetails(container, zone, title, readings) {
     container.replaceChildren();
     const rows = visibleSymptoms().filter(row => row.zone === zone);
+    if (rows.length) {
+      const guidance = element('div', undefined, 'symptom-guidance');
+      guidance.tabIndex = -1;
+      guidance.setAttribute('role', 'group');
+      guidance.setAttribute('aria-label', 'Next step:');
+      guidance.append(
+        element('strong', 'Next step:'),
+        element('p', readings.length
+          ? 'Review the related readings and note when the symptom started. Share this information with the onboard medic.'
+          : 'Note when the symptom started and what you were doing. Share this information with the onboard medic.'),
+        element('p', 'Serious symptoms — contact the onboard medic immediately')
+      );
+      const recommendations = element('a', 'Recommendations', 'secondary symptom-recommendations');
+      recommendations.href = '#assistant';
+      recommendations.addEventListener('click', () => {
+        window.OrbitAssistant.selectSymptom(rows[0], readings);
+      });
+      guidance.append(recommendations);
+      container.append(guidance);
+    }
     for (const row of rows) {
       const note = element('p', row.note);
       note.translate = false;
@@ -56,6 +76,9 @@
         return;
       }
       render();
+      const guidance = $('body-zone-actions').querySelector('.symptom-guidance');
+      guidance?.focus({ preventScroll: true });
+      guidance?.scrollIntoView({ block: 'center' });
       notify('Symptom saved.');
     });
     container.append(form);

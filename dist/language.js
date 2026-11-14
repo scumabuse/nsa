@@ -13,8 +13,14 @@ Training|Обучение
 Personal log|Личный журнал
 Crew health|Здоровье экипажа
 Reading assistant|Помощник по показателям
+Recommendations|Рекомендации
+Symptom recommendations|Рекомендации по симптому
+Get recommendation|Получить рекомендацию
+The symptom note and related readings will be sent to the online assistant.|Описание симптома и связанные измерения будут отправлены онлайн-помощнику.
+Preparing symptom recommendations…|Готовим рекомендации по симптому…
 Dismiss health alert|Закрыть предупреждение о здоровье
 Explain my readings|Объяснить мои показатели
+Refresh explanation|Обновить пояснение
 Import readings|Импорт измерений
 Imported readings:|Загружено измерений:
 Duplicates skipped:|Пропущено дубликатов:
@@ -53,9 +59,11 @@ Personal baseline:|Личная норма:
 More comparison days needed:|Не хватает дней для сравнения:
 Training comparison uses the exercise range.|Учебные значения сравниваются с диапазоном сценария.
 Local assessment|Локальная оценка
-Gemini · Training example|Gemini · Учебный пример
+Training explanation|Пояснение к учебному примеру
+Within range:|В норме:
+Need attention:|Требуют внимания:
 Preparing the training explanation…|Готовим пояснение учебного примера…
-Gemini is unavailable. The local assessment is shown above.|Gemini недоступен. Локальная оценка показана выше.
+Online explanation unavailable. The local assessment is shown above.|Онлайн-пояснение недоступно. Локальная оценка показана выше.
 Personal readings stay on this device.|Личные измерения остаются на этом устройстве.
 Log readings, review changes and prepare a handoff for the onboard medic.|Записывайте показатели, отслеживайте изменения и готовьте отчёт для бортового медика.
 New reading|Новое измерение
@@ -191,6 +199,8 @@ Hands|Кисти
 Feet|Стопы
 Leg nerves|Нервы ног
 Record symptoms|Записать симптомы
+Review the related readings and note when the symptom started. Share this information with the onboard medic.|Посмотрите связанные показатели и отметьте, когда появился симптом. Передайте эти сведения бортовому медику.
+Note when the symptom started and what you were doing. Share this information with the onboard medic.|Запишите, когда появился симптом и чем вы занимались в этот момент. Передайте эти сведения бортовому медику.
 Zoom|Масштаб
 Zoom in|Увеличить
 Zoom out|Уменьшить
