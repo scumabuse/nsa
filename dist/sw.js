@@ -1,8 +1,9 @@
 'use strict';
 
-const cacheName = 'orbit-health-shell-v25';
+const cacheName = 'orbit-health-shell-v28';
 const shell = ['./index.html', './styles.css', './model.js', './rad-data.js', './app.js', './bodymap.js', './bodymap.css', './checkin.js', './space-models.js'];
-for (const name of ['earth_daymap', 'earth_clouds', 'saturn', 'moon']) {
+shell.push('./planet-maps/moon-relief.webp', './planet-maps/mars-relief.webp');
+for (const name of ['earth_daymap', 'earth_clouds', 'saturn', 'moon', 'mars']) {
   shell.push('./planet-maps/' + name + '.jpg');
 }
 const assetUrls = new Set(shell.map((path) => new URL(path, self.registration.scope).href));

@@ -22,7 +22,7 @@
     uniform float time;
     uniform int model;
     uniform sampler2D planetMap;
-    uniform sampler2D cloudMap;
+    uniform sampler2D detailMap;
     const vec3 light = vec3(-.50, .65, .57);
 
     mat2 rotation(float angle) {
@@ -35,18 +35,28 @@
       return length(max(d, 0.)) + min(max(max(d.x, d.y), d.z), 0.);
     }
 
+    float rod(vec3 p, vec3 a, vec3 b, float radius) {
+      vec3 axis = b - a;
+      return length(p - a - axis * clamp(dot(p - a, axis) / dot(axis, axis), 0., 1.)) - radius;
+    }
+
     vec2 satellite(vec3 p) {
       vec2 surface = vec2(box(p, vec3(.215, .192, .205)) - .022, 1.);
       float rails = box(vec3(abs(p.x), abs(p.y), p.z) - vec3(.21, .185, 0.), vec3(.025, .023, .23));
       if (rails < surface.x) surface = vec2(rails, 3.);
       float radiator = box(p - vec3(0., 0., .224), vec3(.152, .133, .018));
       if (radiator < surface.x) surface = vec2(radiator, 4.);
+      float radiatorBolts = length(vec3(abs(p.x), abs(p.y), p.z) - vec3(.13, .109, .245)) - .014;
+      if (radiatorBolts < surface.x) surface = vec2(radiatorBolts, 3.);
       vec3 wing = vec3(abs(p.x), p.yz);
       float strut = box(wing - vec3(.31, 0., 0.), vec3(.10, .026, .026));
       if (strut < surface.x) surface = vec2(strut, 1.);
-      float frame = box(wing - vec3(.66, 0., 0.), vec3(.272, .133, .016));
+      float hinge = rod(wing, vec3(.385, -.15, 0.), vec3(.385, .15, 0.), .018);
+      float panelX = abs(wing.x - .66) - .142;
+      float frame = box(vec3(panelX, wing.yz), vec3(.133, .157, .018)) - .004;
+      frame = min(frame, hinge);
       if (frame < surface.x) surface = vec2(frame, 3.);
-      float panel = box(wing - vec3(.66, 0., .012), vec3(.257, .119, .013));
+      float panel = box(vec3(panelX, wing.y, abs(wing.z) - .017), vec3(.122, .143, .012));
       if (panel < surface.x) surface = vec2(panel, 2.);
       float mast = box(p - vec3(0., .30, 0.), vec3(.025, .12, .025));
       float antenna = p.y - .42 + .85 * dot(p.xz, p.xz);
@@ -54,6 +64,15 @@
       float feed = min(box(p - vec3(0., .46, 0.), vec3(.012, .07, .012)),
                        length(p - vec3(0., .53, 0.)) - .031);
       float equipment = min(mast, dish);
+      equipment = min(equipment, rod(p, vec3(-.157, .40, .08), vec3(0., .53, 0.), .009));
+      equipment = min(equipment, rod(p, vec3(.157, .40, .08), vec3(0., .53, 0.), .009));
+      equipment = min(equipment, rod(p, vec3(0., .39, -.173), vec3(0., .53, 0.), .009));
+      float engine = max(abs(length(p.xz) - mix(.055, .088, clamp((-p.y - .21) * 9., 0., 1.))) - .013,
+        abs(p.y + .266) - .063);
+      if (engine < surface.x) surface = vec2(engine, 5.);
+      float cable = min(rod(p, vec3(.14, .18, .237), vec3(.204, .12, .251), .009),
+                        rod(p, vec3(.204, .12, .251), vec3(.204, -.14, .24), .009));
+      if (cable < surface.x) surface = vec2(cable, 5.);
       if (equipment < surface.x) surface = vec2(equipment, 3.);
       if (feed < surface.x) surface = vec2(feed, 4.);
       return surface;
@@ -72,8 +91,8 @@
       vec3 origin = vec3(uv * 1.03, 2.3);
       vec3 ray = normalize(vec3(uv * .17, -1.));
       mat2 roll = rotation(.48 + sin(time * .31) * .14);
-      mat2 yaw = rotation(.45 + time * .29);
-      mat2 pitch = rotation(-.36);
+      mat2 yaw = rotation(.30 + sin(time * .28) * .45);
+      mat2 pitch = rotation(.32);
       origin.xy = roll * origin.xy; ray.xy = roll * ray.xy;
       origin.xz = yaw * origin.xz; ray.xz = yaw * ray.xz;
       origin.yz = pitch * origin.yz; ray.yz = pitch * ray.yz;
@@ -88,15 +107,21 @@
           sun.xz = yaw * sun.xz;
           sun.yz = pitch * sun.yz;
           float diffuse = .33 + .67 * max(dot(normal, sun), 0.);
-          vec3 color = vec3(.85, .59, .25) * (.91 + .09 * sin(p.y * 86. + sin(p.z * 41.) * 1.7));
+          float foil = sin(p.y * 120. + sin(p.z * 61. + p.x * 48.) * 2.)
+            * sin(p.x * 91. - p.z * 113. + sin(p.y * 87.));
+          vec3 color = mix(vec3(.43, .26, .08), vec3(1., .75, .33), .63 + .23 * foil);
           if (hit.y == 2.) {
-            vec2 cell = fract((vec2(abs(p.x), p.y) - vec2(.403, -.119)) * vec2(23.35, 16.8));
-            float grid = step(.07, cell.x) * step(.07, cell.y);
-            color = mix(vec3(.54, .64, .76), vec3(.10, .25, .53) + .10 * cell.y, grid);
+            vec2 cell = fract(vec2(abs(p.x) - .394, p.y + .143) * vec2(32., 21.));
+            float grid = smoothstep(.035, .095, min(cell.x, cell.y));
+            float contact = 1. - smoothstep(.015, .055, abs(cell.x - .51));
+            vec3 silicon = mix(vec3(.065, .14, .32), vec3(.20, .34, .62), cell.y);
+            color = mix(vec3(.47, .53, .61), silicon + contact * .17, grid);
           } else if (hit.y == 3.) {
             color = vec3(.83, .87, .91);
           } else if (hit.y == 4.) {
             color = mix(vec3(.19, .25, .32), vec3(.72, .77, .81), step(.34, fract(p.y * 65.)));
+          } else if (hit.y == 5.) {
+            color = vec3(.22, .25, .29);
           }
           float reflection = pow(max(0., dot(normal, normalize(sun - ray))), 24.);
           gl_FragColor = vec4(color * diffuse + .22 * reflection, 1.);
@@ -125,11 +150,10 @@
             mix(terrainHash(cell + vec3(0,1,1)), terrainHash(cell + vec3(1,1,1)), f.x), f.y), f.z);
     }
 
-    float crater(vec3 surface, vec3 center, float size) {
-      float d = length(surface - center) / size;
-      float floorShade = -.27 * (1. - smoothstep(.48, .94, d));
-      float rim = smoothstep(.77, .98, d) * (1. - smoothstep(.98, 1.16, d));
-      return floorShade + rim * (.12 + .18 * (surface.x - center.x) / size);
+    vec3 terrainNormal(vec3 surface, vec2 uv) {
+      vec2 slope = (texture2D(detailMap, uv).rg * 255. - 128.) / 127.;
+      vec3 east = normalize(vec3(surface.z, 0., -surface.x) + vec3(.00001, 0., 0.));
+      return normalize(surface + east * slope.x + cross(east, surface) * slope.y);
     }
 
     void renderMars(vec2 plane, float radius) {
@@ -144,21 +168,20 @@
 
       vec3 normal = vec3(plane, sqrt(max(0., 1. - dot(plane, plane))));
       vec3 surface = normal;
-      surface.xz = rotation(.28 - time * .072) * surface.xz;
-      float broad = terrainNoise(surface * 3.8 + vec3(2., 6., 4.));
-      float relief = terrainNoise(surface * 11.) * .55 + terrainNoise(surface * 26.) * .30 +
-        terrainNoise(surface * 64.) * .15;
-      float dust = smoothstep(.33, .68, broad * .72 + relief * .28);
-      vec3 ground = mix(vec3(.36, .16, .115), vec3(1., .56, .33), dust);
-      ground *= .80 + .36 * relief + .08 * terrainNoise(surface * 112.);
-      ground *= 1. + crater(surface, normalize(vec3(.43, -.42, .8)), .14)
-        + crater(surface, normalize(vec3(-.27, .24, .97)), .09)
-        + crater(surface, normalize(vec3(.55, .44, .65)), .065)
-        + crater(surface, normalize(vec3(-.57, -.28, .77)), .055);
-      float frost = smoothstep(.90, .995, abs(surface.y) + .055 * relief);
-      ground = mix(ground, vec3(.84, .68, .59), frost * .72);
+      mat2 tilt = rotation(.16);
+      mat2 spin = rotation(1.55 - time * .045);
+      surface.xy = tilt * surface.xy;
+      surface.xz = spin * surface.xz;
+      vec2 uv = vec2(atan(surface.x, surface.z) / 6.283185 + .5,
+                     acos(clamp(surface.y, -1., 1.)) / 3.141593);
+      vec3 ground = texture2D(planetMap, uv).rgb;
+      ground = mix(ground, vec3(dot(ground, vec3(.30, .59, .11))), .16);
+      vec3 localSun = sun;
+      localSun.xy = tilt * localSun.xy;
+      localSun.xz = spin * localSun.xz;
       float exposure = dot(normal, sun);
-      float day = pow(max(0., exposure), .66);
+      float incidence = max(0., dot(terrainNormal(surface, uv), localSun));
+      float day = pow(incidence, .69) * smoothstep(-.06, .09, exposure);
       float rim = pow(1. - normal.z, 3.6) * smoothstep(-.28, .65, exposure);
       gl_FragColor = vec4(ground * (.035 + .96 * day) + haze * rim * .30, 1.);
     }
@@ -197,11 +220,20 @@
                         acos(clamp(surface.y, -1., 1.)) / 3.141593);
       vec3 albedo = texture2D(planetMap, mapUV).rgb;
       if (model == 4) {
-        float relief = albedo.r - texture2D(planetMap, mapUV + vec2(.0014, -.0014)).r;
-        albedo = pow(albedo, vec3(.85)) * (1.12 + relief * .9);
+        vec3 reliefNormal = terrainNormal(surface, mapUV);
+        vec3 sun = normalize(vec3(-.66, .28, .55));
+        sun.xy = rotation(-.19) * sun.xy;
+        sun.xz = rotation(time * .085) * sun.xz;
+        float incidence = max(0., dot(reliefNormal, sun));
+        float emission = max(.05, n.z);
+        float day = smoothstep(-.07, .08, dot(surface, sun));
+        float scatter = incidence / (incidence + emission);
+        vec3 lunarColor = pow(albedo, vec3(.83)) * (.025 + day * (.67 * scatter + .57 * incidence));
+        gl_FragColor = vec4(lunarColor, 1. - smoothstep(.996, 1., radius));
+        return;
       }
       if (model == 0) {
-        float clouds = texture2D(cloudMap, vec2(fract(mapUV.x + time * .0011), mapUV.y)).r;
+        float clouds = texture2D(detailMap, vec2(fract(mapUV.x + time * .0011), mapUV.y)).r;
         albedo = mix(albedo, vec3(.91, .95, 1.), smoothstep(.17, .88, clouds) * .85);
       }
       float day = pow(max(0., dot(n, light)), .65);
@@ -389,7 +421,7 @@
   let last = -Infinity;
   let approach;
 
-  function loadPlanetMap(name, placeholder) {
+  function loadPlanetMap(filename, placeholder) {
     const texture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, texture);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([...placeholder, 255]));
@@ -404,17 +436,21 @@
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
       refresh();
     };
-    image.src = './planet-maps/' + name + '.jpg';
+    image.src = './planet-maps/' + filename;
     return texture;
   }
 
-  const earth = loadPlanetMap('earth_daymap', [27, 74, 125]);
-  const clouds = loadPlanetMap('earth_clouds', [0, 0, 0]);
-  const saturn = loadPlanetMap('saturn', [188, 165, 127]);
-  const moon = loadPlanetMap('moon', [117, 115, 113]);
-  const maps = { 0: earth, 3: saturn, 4: moon };
+  const earth = loadPlanetMap('earth_daymap.jpg', [27, 74, 125]);
+  const clouds = loadPlanetMap('earth_clouds.jpg', [0, 0, 0]);
+  const saturn = loadPlanetMap('saturn.jpg', [188, 165, 127]);
+  const moon = loadPlanetMap('moon.jpg', [117, 115, 113]);
+  const lunarRelief = loadPlanetMap('moon-relief.webp', [128, 128, 0]);
+  const mars = loadPlanetMap('mars.jpg', [169, 103, 73]);
+  const marsRelief = loadPlanetMap('mars-relief.webp', [128, 128, 0]);
+  const maps = { 0: earth, 1: mars, 3: saturn, 4: moon };
+  const details = { 0: clouds, 1: marsRelief, 4: lunarRelief };
   gl.uniform1i(gl.getUniformLocation(program, 'planetMap'), 0);
-  gl.uniform1i(gl.getUniformLocation(program, 'cloudMap'), 1);
+  gl.uniform1i(gl.getUniformLocation(program, 'detailMap'), 1);
 
   function draw(now) {
     if (now - last >= 32 || reducedMotion.matches) {
@@ -493,15 +529,15 @@
         ]);
         objects = [...surroundings, start.map((value, i) => value + (end[i] - value) * eased)];
       }
-      gl.activeTexture(gl.TEXTURE1);
-      gl.bindTexture(gl.TEXTURE_2D, clouds);
-      gl.activeTexture(gl.TEXTURE0);
       for (const [model, x, pageY, size] of objects) {
         const y = pageY - window.scrollY;
         if (y + size / 2 < 0 || y - size / 2 > height) continue;
         const side = Math.round(size * scale);
         gl.viewport(Math.round(x * scale - side / 2), Math.round((height - y) * scale - side / 2), side, side);
         gl.uniform1i(modelUniform, model);
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(gl.TEXTURE_2D, details[model] || clouds);
+        gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, maps[model] || earth);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
       }
