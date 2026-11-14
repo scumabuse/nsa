@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="./bodymap.css">
   <script defer src="./model.js"></script>
   <script defer src="./rad-data.js"></script>
+  <script defer src="./language.js"></script>
   <script defer src="./app.js"></script>
   <script defer src="./bodymap.js"></script>
   <script defer src="./checkin.js"></script>
@@ -23,20 +24,24 @@
   <div class="space-viewport" aria-hidden="true">
     <div class="space-scene" id="space-scene">
       <canvas id="space-models" class="space-models"></canvas>
+      <div id="pavlodar-flag" class="pavlodar-flag" hidden>
+        <span><img src="./pavlodar-crest.png" alt="" width="64" height="64"></span>
+      </div>
     </div>
   </div>
   <div class="space-flight" aria-hidden="true"><div class="space-streaks" id="space-flight"></div></div>
   <a class="skip" href="#main">Skip to content</a>
   <header class="topbar">
     <div class="wrap header-row">
-      <a class="brand" href="#overview"><span class="mark" aria-hidden="true">✦</span><span>Orbit Health <small>Crew health log</small></span></a>
+      <a class="brand" href="#overview"><img class="nasa-mark" src="./nasa-logo.svg" alt="NASA" width="48" height="42"><span>Orbit Health <small>Crew health log</small></span></a>
       <nav aria-label="Sections">
         <a href="#overview">Overview</a>
         <a href="#journal">Log</a>
         <a href="#radiation">NASA data</a>
         <a href="#guide">Guide</a>
       </nav>
-      <label class="mode"><span>Mode</span><select id="mode"><option value="demo">Training</option><option value="personal">Personal log</option></select></label>
+      <div class="header-settings"><label class="mode"><span>Mode</span><select id="mode"><option value="demo">Training</option><option value="personal">Personal log</option></select></label>
+      <select id="language" aria-label="Language"><option value="en" lang="en">EN</option><option value="ru" lang="ru">RU</option></select></div>
     </div>
   </header>
   <main id="main" class="wrap" tabindex="-1">

@@ -85,6 +85,60 @@ body[data-sector="guide"] .space-nebula { --dust: #367a833c; --dust-edge: #3d528
   mask-image: radial-gradient(ellipse at var(--scene-light, 72% 43%), #000b, #000 68%);
 }
 .measurement-panel { display: flex; flex-direction: column; }
+.pavlodar-flag {
+  position: absolute;
+  aspect-ratio: 1.1;
+  transform: translate(-2%, -100%) rotate(27deg);
+  transform-origin: 2% 100%;
+  filter: drop-shadow(2px 3px 4px #0008);
+}
+.pavlodar-flag::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -1%;
+  width: 70%;
+  height: 8%;
+  transform: rotate(18deg);
+  transform-origin: left center;
+  background: radial-gradient(ellipse at left, #101620aa, transparent 73%);
+  z-index: -1;
+}
+.pavlodar-flag::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4%;
+  background: linear-gradient(90deg, #66727c, #e3eef3, #8898a3);
+  border-radius: 2px;
+}
+.pavlodar-flag span {
+  position: absolute;
+  inset: 4% 0 35% 4%;
+  display: grid;
+  place-items: center;
+  background: #328cac;
+  border-top: 1px solid #a2d9e4;
+  clip-path: polygon(0 0, 33% 4%, 67% 0, 100% 6%, 100% 97%, 64% 94%, 31% 100%, 0 95%);
+  transform-origin: left center;
+}
+.pavlodar-flag span::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, #0005, #fff3 32%, #0004 54%, #fff2 73%, #0005);
+  background-size: 140% 100%;
+}
+.pavlodar-flag img { width: 49%; height: auto; border-radius: 50%; }
+@media (prefers-reduced-motion: no-preference) {
+  .pavlodar-flag span { animation: flag-cloth 3.4s ease-in-out infinite alternate; }
+  .pavlodar-flag span::after { animation: flag-light 3.4s ease-in-out infinite alternate; }
+}
+@keyframes flag-cloth {
+  from { transform: skewY(-3deg); }
+  to { transform: skewY(5deg) scaleX(.95); clip-path: polygon(0 0, 33% 0, 68% 7%, 100% 2%, 100% 92%, 65% 100%, 32% 94%, 0 95%); }
+}
+@keyframes flag-light { to { background-position: 100% 0; } }
 #death-star-space { flex: 1; min-height: 13rem; }
 main > section {
   --border: var(--scene-line, #a3bed14d);
@@ -136,6 +190,8 @@ button:disabled { opacity: .55; cursor: default; }
   display: flex; align-items: center; gap: 1rem; justify-content: space-between;
 }
 .header-row { min-height: 74px; flex-wrap: wrap; padding-block: .75rem; }
+.header-settings { display:flex; align-items:center; gap:.45rem; }
+.nasa-mark { object-fit:contain; flex:none; }
 .brand { justify-content: start; gap: .65rem; color: var(--text); font-weight: 700; text-decoration: none; }
 .brand small { display: block; color: var(--muted); font-weight: 400; }
 .mark { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; color: #d8f3ff; background: #162b44; border: 1px solid #588bb5; box-shadow: 0 0 20px #599fff35; font-size: 1.35rem; }

@@ -2,6 +2,7 @@
 
 (() => {
   const canvas = document.getElementById('space-models');
+  const flag = document.getElementById('pavlodar-flag');
   const stationSpace = document.getElementById('death-star-space');
   const gl = canvas.getContext('webgl', { alpha: true, premultipliedAlpha: true });
   if (!gl) return;
@@ -21,6 +22,7 @@
     varying vec2 uv;
     uniform float time;
     uniform int model;
+    uniform float rocketAngle;
     uniform sampler2D planetMap;
     uniform sampler2D detailMap;
     const vec3 light = vec3(-.50, .65, .57);
@@ -300,7 +302,7 @@
     }
 
     void renderRocket() {
-      vec2 p = rotation(.78) * uv;
+      vec2 p = rotation(rocketAngle) * uv;
       vec3 origin = vec3(p, 1.8);
       vec3 ray = vec3(0., 0., -1.);
       float distance = 0.;
@@ -385,8 +387,76 @@
       gl_FragColor = vec4(color, 1. - smoothstep(.994, 1., r));
     }
 
+    vec2 astronaut(vec3 p) {
+      float torso = box(p - vec3(0., .10, 0.), vec3(.17, .22, .105)) - .05;
+      float helmet = length(p - vec3(0., .48, .015)) - .183;
+      float limbs = rod(p, vec3(-.16,.24,0.), vec3(-.34,.06,.011), .079);
+      limbs = min(limbs, rod(p, vec3(-.34,.06,.011), vec3(-.46,.18,.11), .062));
+      limbs = min(limbs, rod(p, vec3(.16,.22,0.), vec3(.34,.02,-.04), .080));
+      limbs = min(limbs, rod(p, vec3(.34,.02,-.04), vec3(.45,-.06,.10), .065));
+      limbs = min(limbs, rod(p, vec3(-.095,-.08,0.), vec3(-.19,-.40,.07), .087));
+      limbs = min(limbs, rod(p, vec3(-.19,-.40,.07), vec3(-.26,-.66,.095), .073));
+      limbs = min(limbs, rod(p, vec3(.10,-.08,0.), vec3(.24,-.33,.11), .087));
+      limbs = min(limbs, rod(p, vec3(.24,-.33,.11), vec3(.22,-.61,.25), .073));
+      vec2 hit = vec2(min(min(torso, helmet), limbs), 1.);
+      float visor = length((p - vec3(0., .487, .119)) * vec3(1., 1.22, 1.15)) - .153;
+      if (visor < hit.x) hit = vec2(visor, 2.);
+      float pack = box(p - vec3(0., .12, -.165), vec3(.142,.218,.055)) - .022;
+      float controls = box(p - vec3(0., .20, .155), vec3(.089,.064,.022)) - .009;
+      float boots = min(box(p - vec3(-.26,-.68,.14), vec3(.074,.051,.106)),
+                        box(p - vec3(.22,-.63,.29), vec3(.074,.049,.096))) - .019;
+      float hardware = min(min(pack, controls), boots);
+      if (hardware < hit.x) hit = vec2(hardware, 3.);
+      float hose = rod(p, vec3(-.095,.14,.165), vec3(-.153,-.02,.12), .021);
+      hose = min(hose, rod(p, vec3(-.153,-.02,.12), vec3(-.198,-.045,-.12), .018));
+      if (hose < hit.x) hit = vec2(hose, 4.);
+      return hit;
+    }
+
+    void renderAstronaut() {
+      mat2 roll = rotation(.32 + sin(time * .21) * .32);
+      mat2 yaw = rotation(-.36 + sin(time * .17) * .65);
+      vec3 origin = vec3(roll * uv, 2.1);
+      vec3 ray = vec3(0., 0., -1.);
+      origin.xz = yaw * origin.xz;
+      ray.xz = yaw * ray.xz;
+      vec3 sun = vec3(roll * light.xy, light.z);
+      sun.xz = yaw * sun.xz;
+      float distance = 0.;
+      for (int i = 0; i < 64; i++) {
+        vec3 p = origin + ray * distance;
+        vec2 hit = astronaut(p);
+        if (hit.x < .0018) {
+          vec2 e = vec2(.003, 0.);
+          vec3 n = normalize(vec3(astronaut(p+e.xyy).x - astronaut(p-e.xyy).x,
+            astronaut(p+e.yxy).x - astronaut(p-e.yxy).x, astronaut(p+e.yyx).x - astronaut(p-e.yyx).x));
+          float diffuse = .25 + .75 * max(dot(n, sun), 0.);
+          float specular = pow(max(dot(n, normalize(sun-ray)), 0.), 24.);
+          float seam = .90 + .10 * smoothstep(-.45, .35, sin(p.y * 79. + sin(p.x * 30.)));
+          vec3 color = vec3(.81,.86,.88) * seam;
+          if (abs(p.x) > .29 && p.y > -.21 && p.y < -.12) color = vec3(.68,.15,.095);
+          if (hit.y == 2.) {
+            float rim = pow(1. - max(dot(n,-ray),0.), 2.);
+            color = mix(vec3(.21,.13,.08), vec3(.90,.63,.26), rim + .32 * max(n.y,0.));
+            specular *= 3.;
+          }
+          if (hit.y == 3.) {
+            color = vec3(.42,.53,.60);
+            if (p.z > .16 && p.y > .145) color *= .72 + .28 * step(.61, fract(p.x * 37.));
+          }
+          if (hit.y == 4.) color = vec3(.27,.34,.39);
+          gl_FragColor = vec4(color * diffuse + .22 * specular, 1.);
+          return;
+        }
+        distance += hit.x * .82;
+        if (distance > 3.1) break;
+      }
+      gl_FragColor = vec4(0.);
+    }
+
     void main() {
-      if (model == 9) renderDeathStar();
+      if (model == 10) renderAstronaut();
+      else if (model == 9) renderDeathStar();
       else if (model == 8) renderSun();
       else if (model == 7) renderRocket();
       else if (model == 5) renderBlackHole();
@@ -415,6 +485,7 @@
   gl.enableVertexAttribArray(corner);
   gl.vertexAttribPointer(corner, 2, gl.FLOAT, false, 0, 0);
   const timeUniform = gl.getUniformLocation(program, 'time');
+  const rocketAngleUniform = gl.getUniformLocation(program, 'rocketAngle');
   const modelUniform = gl.getUniformLocation(program, 'model');
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   let frame = 0;
@@ -468,7 +539,13 @@
       gl.uniform1f(timeUniform, reducedMotion.matches ? 0 : (now / 1000) % 180);
       const compact = width < 640;
       const lowerPage = Math.max(height * .78, document.body.scrollHeight - height * .64);
-      const flight = reducedMotion.matches ? .54 : (now / 8500) % 1;
+      const leg = reducedMotion.matches ? .54 : (now / 8500) % 2;
+      const returning = leg >= 1;
+      const flight = returning ? 2 - leg : leg;
+      const rocketSize = compact ? 85 : 154;
+      const travel = width + 2 * rocketSize;
+      const climb = height * .52;
+      gl.uniform1f(rocketAngleUniform, Math.atan2(travel, climb) + (returning ? Math.PI : 0));
       const distantMoon = [4, width * .93, height * .64, compact ? 32 : 66];
       const closeMoon = [4, width * (compact ? .28 : .37), height * .48, Math.min(width * .91, 880)];
       const distantMars = [1, width * .88, height * .32, compact ? 28 : 58];
@@ -481,7 +558,8 @@
         distantMoon,
         [2, width * .79, height * 1.22, compact ? 74 : 125],
         [4, width * .16, height * 1.86, Math.min(width * .19, 115)],
-        [7, width * (.06 + .88 * flight), lowerPage + height * (.27 - .52 * flight), compact ? 85 : 154],
+        [7, -rocketSize + travel * flight, lowerPage + height * .27 - climb * flight, rocketSize],
+        [10, width * .89, height * .94, compact ? 71 : 144],
       ];
       const sectors = {
         journal: [
@@ -490,6 +568,7 @@
           [6, width * .13, height * .62, compact ? 52 : 97],
           [2, width * .94, height * 1.22, compact ? 52 : 96],
           [6, width * .85, lowerPage, compact ? 120 : 198],
+          [10, width * .07, height * 1.16, compact ? 65 : 136],
         ],
         radiation: [
           closeMars,
@@ -498,6 +577,7 @@
           [4, width * .92, height * .64, compact ? 30 : 58],
           [2, width * .15, height * 1.28, compact ? 72 : 120],
           [8, width * .94, lowerPage, Math.min(width * .55, 395)],
+          [10, width * .79, lowerPage - height * .29, compact ? 65 : 121],
         ],
         guide: [
           closeRelay,
@@ -506,10 +586,12 @@
           [6, width * .16, height * .74, compact ? 52 : 92],
           [2, width * .20, height * 1.38, compact ? 76 : 110],
           [5, width * .87, lowerPage, Math.min(width * .46, 335)],
+          [10, width * .13, lowerPage + height * .05, compact ? 65 : 130],
         ],
       };
       const sector = document.body.dataset.sector;
       let objects = sectors[sector] || overview;
+      let flagMoon = sector === 'journal' ? closeMoon : null;
       if (sector === 'guide' && stationSpace.offsetHeight) {
         const area = stationSpace.getBoundingClientRect();
         objects.push([9, area.left + area.width * .5, area.top + window.scrollY + area.height * .5,
@@ -527,10 +609,23 @@
         const surroundings = objects.filter(object => object !== start).map(([model, x, y, size]) => [
           model, x + (x - start[1]) * eased * .45, y + (y - start[2]) * eased * .45, size * (1 - eased * .85),
         ]);
-        objects = [...surroundings, start.map((value, i) => value + (end[i] - value) * eased)];
+        const target = start.map((value, i) => value + (end[i] - value) * eased);
+        objects = [...surroundings, target];
+        if (approach.destination === 'journal') flagMoon = target;
+        else if (sector === 'journal') flagMoon = surroundings.find(([model]) => model === 4);
       }
-      for (const [model, x, pageY, size] of objects) {
-        const y = pageY - window.scrollY;
+      flag.hidden = !flagMoon || flagMoon[3] < 80;
+      if (!flag.hidden) {
+        const [, x, y, size] = flagMoon;
+        flag.style.left = `${x + size * .397}px`;
+        flag.style.top = `${y - window.scrollY - size * .18}px`;
+        flag.style.width = `${size * .105}px`;
+      }
+      for (const [model, baseX, pageY, size] of objects) {
+        const drift = model === 10 && !reducedMotion.matches ? now / 1000 : 0;
+        const x = baseX + Math.sin(drift * .43) * size * .24;
+        const y = pageY - window.scrollY + Math.sin(drift * .34) * size * .18;
+        if (x + size / 2 < 0 || x - size / 2 > width) continue;
         if (y + size / 2 < 0 || y - size / 2 > height) continue;
         const side = Math.round(size * scale);
         gl.viewport(Math.round(x * scale - side / 2), Math.round((height - y) * scale - side / 2), side, side);

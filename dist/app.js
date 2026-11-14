@@ -270,7 +270,11 @@ function renderJournal() {
     info.append(element('h3', meta.label + ' · ' + reading(row) + ' ' + meta.unit),
       badge(assess(row, entries, Date.parse(row.at)).level));
     if (row.metric === 'glucose') info.append(element('p', contexts[row.context ?? 'unspecified'], 'hint'));
-    if (row.note) info.append(element('p', row.note, 'hint'));
+    if (row.note) {
+      const note = element('p', row.note, 'hint');
+      note.translate = false;
+      info.append(note);
+    }
     const actions = element('div', undefined, 'card-actions');
     actions.append(button('Edit', () => openEntry(row.metric, row)), button('Delete', () => openDelete(row)));
     item.append(time, info, actions);

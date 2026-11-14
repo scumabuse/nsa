@@ -1,8 +1,8 @@
 'use strict';
 
-const cacheName = 'orbit-health-shell-v28';
+const cacheName = 'orbit-health-shell-v38';
 const shell = ['./index.html', './styles.css', './model.js', './rad-data.js', './app.js', './bodymap.js', './bodymap.css', './checkin.js', './space-models.js'];
-shell.push('./planet-maps/moon-relief.webp', './planet-maps/mars-relief.webp');
+shell.push('./planet-maps/moon-relief.webp', './planet-maps/mars-relief.webp', './pavlodar-crest.png', './language.js', './nasa-logo.svg');
 for (const name of ['earth_daymap', 'earth_clouds', 'saturn', 'moon', 'mars']) {
   shell.push('./planet-maps/' + name + '.jpg');
 }

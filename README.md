@@ -22,7 +22,7 @@ Open `http://127.0.0.1:8787/` and wait for the “Available offline” footer be
 
 - [NASA PDS MSL RAD RDR V1.0](https://pds.nasa.gov/ds-view/pds/viewProfile.jsp?dsid=MSL-M-RAD-3-RDR-V1.0) provides historical rover measurements shown in **NASA data**. The app plots both detectors’ published absorbed dose rates in µGy/h for the 14 observations in the [Sol 1 data product](https://pds-ppi.igpp.ucla.edu/data/MSL-M-RAD-3-RDR-V1.0/DATA/SOL_00000_00089/RAD_RDR_2012_220_02_25_0001_V00.TXT). The [PDS label](https://pds-ppi.igpp.ucla.edu/data/MSL-M-RAD-3-RDR-V1.0/DATA/SOL_00000_00089/RAD_RDR_2012_220_02_25_0001_V00.LBL) supplies units and byte offsets. The [instrument specification](https://pds-ppi.igpp.ucla.edu/data/MSL-M-RAD-3-RDR-V1.0/DOCUMENT/RAD_RDR_SIS.PDF) describes the detectors and product structure.
 - [NASA Human Research Program’s five spaceflight hazards](https://www.nasa.gov/hrp/hazards/) informs the Crew guide.
-- OpenAI Codex was used to develop and test the initial prototype and this revision, including the English interface, PDS extraction and display, handoff export and documentation. Training readings are synthetic test fixtures. The rover measurements come from NASA PDS.
+- Training readings are synthetic test fixtures. The rover measurements come from NASA PDS.
 
 To reproduce `dist/rad-data.js`, download the TXT and LBL linked above and run `node tools/extract-rad.cjs <TXT path> <LBL path>`. The script verifies SHA-256 hashes and matches all 28 values against the offsets in the label.
 

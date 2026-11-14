@@ -10,12 +10,49 @@
 .bones { fill:none; stroke:#8ae9ff; stroke-linecap:round; stroke-linejoin:round; filter:drop-shadow(0 0 3px #3ae7ff80); opacity:.79; }
 .body-region { fill:transparent; pointer-events:fill; cursor:pointer; }
 .body-region[aria-pressed=true] { fill:#ec243f63; stroke:#ff5b69; stroke-width:1.5; }
-.body-region[data-preview],.body-region:hover,.body-region:focus-visible {
+.body-region[data-preview],.body-region:hover,.body-region:focus-visible,
+.anatomy-structure[data-preview],.anatomy-structure:hover,.anatomy-structure:focus-visible {
   fill:#ff2339be;
   stroke:#ffc3ca;
   stroke-width:2;
   outline:none;
 }
+.anatomy-modes { display:flex; flex-wrap:wrap; gap:.4rem; margin-bottom:1rem; }
+.anatomy-modes button[aria-pressed=true] { border-color:#7dd7e7; color:#def9ff; box-shadow:inset 0 -2px #7dd7e7; }
+.anatomy-outline { fill:#122b42b8; stroke:#4a8da6; pointer-events:none; }
+.anatomy-structure { fill:#40748b; stroke:#85d2e1; stroke-width:.65; cursor:pointer; }
+.anatomical-cutaway [data-anatomy="muscles"] { fill:#8f5967; stroke:#ac7180; stroke-width:.4; opacity:.37; }
+.anatomical-cutaway .bones { opacity:0; }
+.anatomical-cutaway .body-face { opacity:.50; }
+.cutaway-vessels { fill:none; stroke:#c27782; stroke-width:1.25; opacity:.48; pointer-events:none; }
+.cutaway-vessels path + path { stroke:#6c9cb5; stroke-width:.9; }
+.cutaway-organs .anatomy-structure { fill:url(#cutaway-tissue); stroke:#c29aa477; stroke-width:.48; }
+.cutaway-organs [data-zone="heart"] { fill:url(#cutaway-heart); }
+.cutaway-bones .anatomy-structure { fill:#7793a36b; stroke:#a5b7c07d; stroke-width:.45; }
+.cutaway-bones :is([data-zone="bone-skull"], [data-zone="bone-pelvic-bone"]) { fill:#7793a32b; }
+.cutaway-detail { fill:none; stroke:#e2acaa48; stroke-width:.65; stroke-linecap:round; pointer-events:none; }
+.cutaway-hands .anatomy-structure, .anatomy-palm { fill:#866777; stroke:#bd9ca9; stroke-width:1.5; }
+.anatomy-palm { pointer-events:none; }
+.cutaway-feet .anatomy-structure { fill:#866777; stroke:#bd9ca9; stroke-width:1.5; }
+.cutaway-nerves .anatomy-structure, [data-body-view="nerves"] .anatomy-structure { fill:#b99a60; stroke:#ddc089; }
+.cutaway-nerves .anatomy-structure:not(:is(:hover,:focus-visible,[aria-pressed=true],[data-preview])) { opacity:.58; }
+[data-body-view="organs"] .anatomy-structure { fill:#985267; stroke:#ffb4b0; }
+[data-body-view="bones"] .anatomy-structure { fill:#91bdce; stroke:#d8f5f9; }
+[data-zone="heart"],[data-zone="liver"] { filter:brightness(1.18); }
+[data-zone$="kidney"] { filter:brightness(.82); }
+.anatomy-detail .anatomy-structure[aria-pressed=true] { fill:#df394f; stroke:#ffc3ca; }
+.anatomy-detail .anatomy-structure:is(:hover,:focus-visible,[data-preview]) { fill:#ff4659; stroke:#ffe2e5; }
+.anatomical-cutaway .anatomy-structure[aria-pressed=true]:not(:is(:hover,:focus-visible,[data-preview])) {
+  stroke:#edb0b5;
+  stroke-width:1.15;
+}
+.anatomical-cutaway .cutaway-organs [aria-pressed=true]:not(:is(:hover,:focus-visible,[data-preview])) {
+  fill:url(#cutaway-heart);
+  stroke:#d3a4ac99;
+  stroke-width:.75;
+}
+[data-body-view="hands"] { transform:translate(0, -40px) scale(1, 1.24); }
+.body-picker select { min-width:min(12rem, 100%); }
 .body-picker { display:flex; flex-wrap:wrap; align-items:center; gap:.65rem; margin-bottom:1rem; }
 .body-details h3 { margin-bottom:.45rem; font-size:1.25rem; }
 .body-details > p { max-width:48ch; }
