@@ -838,9 +838,7 @@ for (const [metric, meta] of Object.entries(metrics)) {
 try {
   const remembered = localStorage.getItem(prefix + 'mode');
   if (modes.includes(remembered)) mode = remembered;
-} catch {
-  // reloadJournal surfaces storage errors.
-}
+} catch {}
 $('mode').value = mode;
 $('dismiss-health-alert').addEventListener('click', () => {
   dismissedHealthAlert = currentHealthAlert;
